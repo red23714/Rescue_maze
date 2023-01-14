@@ -84,31 +84,31 @@ void mov_forward() {
 #endif
 }
 
-void mov_back() {
-#if DEBUG_HAND
-  Serial.println("Move back ");
-  delay(10);
-#else
+// void mov_back() {
+// #if DEBUG_HAND
+//   Serial.println("Move back ");
+//   delay(10);
+// #else
 
-  motor_l(-SPEED);
-  motor_r(-SPEED);
-  while ((countL + countR) / 2 <= 1800) 
-  {
-    #if DEBUG_ENC
-      Serial.print("countL = ");
-      Serial.print(countL);
-      Serial.print(" countR = ");
-      Serial.println(countR);
-    #endif
-    Serial.print("");
-    delay(10);
-  } 
+//   motor_l(-SPEED);
+//   motor_r(-SPEED);
+//   while ((countL + countR) / 2 <= 1800) 
+//   {
+//     #if DEBUG_ENC
+//       Serial.print("countL = ");
+//       Serial.print(countL);
+//       Serial.print(" countR = ");
+//       Serial.println(countR);
+//     #endif
+//     Serial.print("");
+//     delay(10);
+//   } 
   
-  motor_stop();
-  countL = 0;
-  countR = 0;
-#endif
-}
+//   motor_stop();
+//   countL = 0;
+//   countR = 0;
+// #endif
+// }
 
 void rot_right() 
 {
@@ -119,7 +119,7 @@ void rot_right()
 
   motor_l(SPEED);
   motor_r(-SPEED);
-  while(countL <= 1150 || (get_distance(&sensor_r) - get_distance(&sensor_l) < 10)) 
+  while(countL <= 1150 || (get_distance(&sensor_r) - get_distance(&sensor_l) > 10)) 
   {
     #if DEBUG_ENC
       Serial.print("countL = ");
@@ -146,7 +146,7 @@ void rot_left()
   motor_l(-SPEED);
   motor_r(SPEED);
 
-  while (countR <= 1150 || (get_distance(&sensor_l) - get_distance(&sensor_r) < 10))
+  while (countR <= 1150 || (get_distance(&sensor_l) - get_distance(&sensor_r) > 10))
   {
     #if DEBUG_ENC
       Serial.print("countL = ");

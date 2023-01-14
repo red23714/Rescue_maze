@@ -1,25 +1,22 @@
 void return_to_point() 
 {
-  node point = graph.get_not_been();
-  Vec<byte> moves = graph.get_move(point);
+  node point = graph.get_not_discovered();
+  Vec<enum moves> moves = graph.get_move(point, 0);
 
   for (int i = 0; i < moves.size(); i++) 
   {
-    switch (moves[i]) 
+    switch(moves[i])
     {
-      case 0:
+      case ROTATE_RIGHT:
         rot_right();
-        mov_forward();
         break;
-      case 1:
+      case ROTATE_LEFT:
         rot_left();
+        break;
+      case MOVE_FORWARD:
         mov_forward();
         break;
-      case 2:
-        mov_forward();
-        break;
-      case 3:
-        mov_back();
+      default:
         break;
     }
   }
