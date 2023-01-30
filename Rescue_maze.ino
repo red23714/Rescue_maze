@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <VL53L0X.h>
 #include <Graph.h>
+#include <MPU9250.h>
 
 #define DEBUG 0
 #define DEBUG_ENC 0
@@ -17,36 +18,62 @@
 #define sensor_u_newAddress 42
 #define sensor_l_newAddress 43
 
+#define sensor_gyro_newAdress 0x68
+
 #define XSHUT_pin1 24
 #define XSHUT_pin2 25
 #define XSHUT_pin3 23
 
-#define DISTANCE 120
+#define DISTANCE 140
+#define K_DIS 1
+#define ROT_K 7
 
 VL53L0X sensor_r;
 VL53L0X sensor_u;
 VL53L0X sensor_l;
 
+MPU9250 mpu;
+
 Graph graph;
 byte x = 0, y = 0;
 
 byte rotate_count = 0;
-int angle;
+int angle = 0, roll_first = 0, pitch_first = 0, yaw_first = 0;
 
 int countL = 0, countR = 0;
 
-void setup() 
+void setup()
 {
+  pinMode(31, OUTPUT);
   Serial.begin(9600);
   init_dis();
   init_encoder();
+  init_gyro();
+
+  while(!digitalRead(31))
+  {
+    mpu.update();
+    Serial.println(yaw());
+    delay(1);
+  }
+  
+  while (!mpu.update());
+
+  roll_first = mpu.getRoll();
+  pitch_first = mpu.getPitch();
+  yaw_first = yaw();
 }
 
-int test = 0;
-
-void loop() 
+void loop()
 {
-  right_hand();
-  //debug_dis();
+  //  motor_l(70);
+  //  motor_r(-70);
+  //  delay(1000);
+  //  motor_l(-70);
+  //  motor_r(70);
+  //  delay(1000);
+  if (mpu.update())
+  {
+    right_hand();
+  }
 }
-

@@ -1,18 +1,20 @@
 void motor_l(int value) 
-{
-  if (abs(value) > 255) value = 255 * sign(value);
-
-  if(value == 0) 
+{ 
+  int sign_v = sign(value);
+  if (abs(value) > 255) value = 255 * sign_v;
+  value = sign_v*(255 - abs(value));
+  
+  if(value == 0 && sign_v == 0) 
   {
     digitalWrite(M1_1, 1);
     digitalWrite(M1_2, 1);
   }
   else
   {
-    if(value > 0)
+    if(sign_v > 0)
     {
       digitalWrite(M1_1, 1);
-      analogWrite(M1_2, value);
+      analogWrite(M1_2, abs(value));
     }
     else
     {
@@ -23,20 +25,23 @@ void motor_l(int value)
 }
 
 void motor_r(int value) 
-{
-  if (abs(value) > 255) value = 255 * sign(value);
+{ 
+  int sign_v = sign(value);
+  if (abs(value) > 255) value = 255 * sign_v;
 
-  if(value == 0) 
+  value = sign_v*(255 - abs(value));
+
+  if(value == 0 && sign_v == 0) 
   {
     digitalWrite(M2_1, 1);
     digitalWrite(M2_2, 1);
   }
   else
   {
-    if(value > 0)
+    if(sign_v > 0)
     {
       digitalWrite(M2_1, 1);
-      analogWrite(M2_2, value);
+      analogWrite(M2_2, abs(value));
     }
     else
     {
@@ -64,89 +69,53 @@ void mov_forward() {
   delay(10);
 #else
 
-  motor_l(SPEED);
-  motor_r(SPEED);
-  while ((countL + countR) / 2 <= 1800 || get_distance(&sensor_u) >  DISTANCE) 
-  {
-    #if DEBUG_ENC
-      Serial.print("countL = ");
-      Serial.print(countL);
-      Serial.print(" countR = ");
-      Serial.println(countR);
-    #endif
-    Serial.print("");
-    delay(10);
-  } 
-  
-  motor_stop();
-  countL = 0;
-  countR = 0;
-#endif
-}
-
-// void mov_back() {
-// #if DEBUG_HAND
-//   Serial.println("Move back ");
-//   delay(10);
-// #else
-
-//   motor_l(-SPEED);
-//   motor_r(-SPEED);
-//   while ((countL + countR) / 2 <= 1800) 
-//   {
-//     #if DEBUG_ENC
-//       Serial.print("countL = ");
-//       Serial.print(countL);
-//       Serial.print(" countR = ");
-//       Serial.println(countR);
-//     #endif
-//     Serial.print("");
-//     delay(10);
-//   } 
-  
-//   motor_stop();
-//   countL = 0;
-//   countR = 0;
-// #endif
-// }
-
-void rot_right() 
-{
-#if DEBUG_HAND
-  Serial.println("Rotate right ");
+#if DEBUG 
+  Serial.println("Move forward ");
   delay(10);
-#else
+#endif
 
-  motor_l(SPEED);
-  motor_r(-SPEED);
-  while(countL <= 1150 || (get_distance(&sensor_r) - get_distance(&sensor_l) > 10)) 
+  int u, err = 0, dir;
+
+  if(get_distance(&sensor_r) < DISTANCE)
   {
-    #if DEBUG_ENC
-      Serial.print("countL = ");
-      Serial.print(countL);
-      Serial.print(" countR = ");
-      Serial.println(countR);
-    #endif
-    Serial.print("");
+    dir = 1;
+  }
+
+  if(get_distance(&sensor_l) < DISTANCE)
+  {
+    dir = 2;
+  }
+
+  while (get_distance(&sensor_u) >  DISTANCE) 
+  {
+    err = 0;
+    if(dir == 1 && abs(get_distance(&sensor_r) - DISTANCE) < 100) err = get_distance(&sensor_r) - DISTANCE;
+    if(dir == 2 && abs(get_distance(&sensor_l) - DISTANCE) < 100) err = get_distance(&sensor_l) - DISTANCE;
+
+    u = err * K_DIS;
+    motors(SPEED + u, SPEED - u);
     delay(10);
   } 
-    
+  
   motor_stop();
-  countR = 0;
   countL = 0;
+  countR = 0;
 #endif
 }
 
-void rot_left() 
+void rotate(float angle)
 {
-#if DEBUG_HAND
-  Serial.println("Rotate left ");
-#else
+#if DEBUG 
+  Serial.print("Rotate ");
+  Serial.println(angle);
+#endif
 
-  motor_l(-SPEED);
-  motor_r(SPEED);
+  while(!mpu.update());
+  
+  float err = 0, u = 0, timer = millis();
+  float last_yaw = yaw();
 
-  while (countR <= 1150 || (get_distance(&sensor_l) - get_distance(&sensor_r) > 10))
+  while (true)
   {
     #if DEBUG_ENC
       Serial.print("countL = ");
@@ -154,17 +123,41 @@ void rot_left()
       Serial.print(" countR = ");
       Serial.println(countR);
     #endif
-    Serial.print("");
-    delay(10);
+    
+    if(mpu.update())
+    {
+      err = adduction(angle - (yaw() - last_yaw));
+      u = err * ROT_K;
+    }
+
+    if(abs(u) < 50) u = 50 * sign(u);
+    
+    motor_l(-u);
+    motor_r(u);
+
+    if(abs(err) > 3) timer = millis();
+    if(millis() - timer > 500) break;
+
+//    Serial.print(angle);
+//    Serial.print(" ");
+//    Serial.print(yaw());
+//    Serial.print(" ");
+//    Serial.print(u); 
+//    Serial.print(" ");
+//    Serial.println(err);
   }
 
   motor_stop();
   countR = 0;
   countL = 0;
-#endif
 }
 
+void rot_right() 
+{
+  rotate(90);
+}
 
-
-
-
+void rot_left() 
+{
+  rotate(-90);
+}

@@ -11,7 +11,7 @@ void right_hand()
   else  
   {
     rot_left();
-  } 
+  }
 }
 
 void left_hand() 
