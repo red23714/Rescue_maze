@@ -3,7 +3,7 @@
 #include <Graph.h>
 #include <MPU9250.h>
 
-#define DEBUG 0
+#define DEBUG 1
 #define DEBUG_ENC 0
 #define DEBUG_HAND 0
 
@@ -24,9 +24,11 @@
 #define XSHUT_pin2 25
 #define XSHUT_pin3 23
 
+#define DISTANCE_WALL 110
 #define DISTANCE 140
 #define K_DIS 1
-#define ROT_K 7
+#define ROT_K 6
+#define K_STOP_ROTATE 3
 
 VL53L0X sensor_r;
 VL53L0X sensor_u;
@@ -38,7 +40,7 @@ Graph graph;
 byte x = 0, y = 0;
 
 byte rotate_count = 0;
-int angle = 0, roll_first = 0, pitch_first = 0, yaw_first = 0;
+int angle = 0, angle_err = 0, roll_first = 0, pitch_first = 0, yaw_first = 0;
 
 int countL = 0, countR = 0;
 
@@ -62,18 +64,16 @@ void setup()
   roll_first = mpu.getRoll();
   pitch_first = mpu.getPitch();
   yaw_first = yaw();
+  angle_err = 0;
 }
 
 void loop()
 {
-  //  motor_l(70);
-  //  motor_r(-70);
-  //  delay(1000);
-  //  motor_l(-70);
-  //  motor_r(70);
-  //  delay(1000);
   if (mpu.update())
   {
-    right_hand();
+    // right_hand();
+    mov_forward();
+    //motors(SPEED, SPEED);
+    //debug_dis();
   }
 }

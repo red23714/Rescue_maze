@@ -76,28 +76,19 @@ void mov_forward() {
 
   int u, err = 0, dir;
 
-  if(get_distance(&sensor_r) < DISTANCE)
-  {
-    dir = 1;
-  }
+  //if(abs(yaw() - angle_err) < 50) rotate(yaw() - angle_err);
 
-  if(get_distance(&sensor_l) < DISTANCE)
-  {
-    dir = 2;
-  }
-
-  while (get_distance(&sensor_u) >  DISTANCE) 
+  while (get_distance(&sensor_u) >  DISTANCE_WALL) 
   {
     err = 0;
-    if(dir == 1 && abs(get_distance(&sensor_r) - DISTANCE) < 100) err = get_distance(&sensor_r) - DISTANCE;
-    if(dir == 2 && abs(get_distance(&sensor_l) - DISTANCE) < 100) err = get_distance(&sensor_l) - DISTANCE;
+    err = get_distance(&sensor_r) - get_distance(&sensor_l);
 
     u = err * K_DIS;
-    motors(SPEED + u, SPEED - u);
-    delay(10);
+    motors(SPEED - u, SPEED + u);
   } 
   
   motor_stop();
+  // delay(1000);
   countL = 0;
   countR = 0;
 #endif
@@ -113,7 +104,8 @@ void rotate(float angle)
   while(!mpu.update());
   
   float err = 0, u = 0, timer = millis();
-  float last_yaw = yaw();
+  yaw_first = 0;
+  yaw_first = yaw();
 
   while (true)
   {
@@ -124,30 +116,34 @@ void rotate(float angle)
       Serial.println(countR);
     #endif
     
-    if(mpu.update())
-    {
-      err = adduction(angle - (yaw() - last_yaw));
-      u = err * ROT_K;
-    }
+    while(!mpu.update());
+    
+    err = adduction(angle - yaw());
+    u = err * ROT_K;
+    
 
     if(abs(u) < 50) u = 50 * sign(u);
+    if(abs(u) > 180) u = 180 * sign(u);
     
     motor_l(-u);
     motor_r(u);
 
-    if(abs(err) > 3) timer = millis();
-    if(millis() - timer > 500) break;
+    if(abs(err) > K_STOP_ROTATE) timer = millis();
+    if(millis() - timer > 1000) break;
 
-//    Serial.print(angle);
-//    Serial.print(" ");
-//    Serial.print(yaw());
-//    Serial.print(" ");
-//    Serial.print(u); 
-//    Serial.print(" ");
-//    Serial.println(err);
+    // Serial.print(angle);
+    // Serial.print(" ");
+    // Serial.print(yaw());
+    // Serial.print(" ");
+    // Serial.print(u); 
+    // Serial.print(" ");
+    //Serial.println(err);
   }
 
   motor_stop();
+  wait(1000);
+  // delay(1000);
+  angle_err = yaw();
   countR = 0;
   countL = 0;
 }

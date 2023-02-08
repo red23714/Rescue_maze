@@ -11,3 +11,12 @@ float adduction(float angle)
 
     return angle;
 }
+
+void wait(int time)
+{
+  float timer = millis();
+  while(millis() - timer < time)
+  {
+    mpu.update();
+  }
+}

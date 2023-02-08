@@ -3,6 +3,10 @@ void right_hand()
   if (get_distance(&sensor_r) > DISTANCE) 
   {
     rot_right();
+    if(get_distance(&sensor_u) > DISTANCE)
+    {
+      mov_forward();
+    }
   } 
   else if (get_distance(&sensor_u) > DISTANCE) 
   {
@@ -11,6 +15,10 @@ void right_hand()
   else  
   {
     rot_left();
+    if(get_distance(&sensor_u) > DISTANCE)
+    {
+      mov_forward();
+    }
   }
 }
 
