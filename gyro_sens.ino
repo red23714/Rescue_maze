@@ -126,3 +126,20 @@ void add_by_angle()
 
   graph.add_node(x, y);
 }
+
+void gyro_calibration()
+{
+  while(!digitalRead(31))
+  {
+    mpu.update();
+    Serial.println(yaw());
+    delay(1);
+  }
+  
+  while (!mpu.update());
+
+  roll_first = roll();
+  pitch_first = pitch();
+  yaw_first = yaw();
+  angle_err = 0;
+}

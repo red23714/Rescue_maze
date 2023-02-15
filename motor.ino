@@ -74,21 +74,26 @@ void mov_forward() {
   delay(10);
 #endif
 
-  int u, err = 0, dir;
+  int u, err = 0, right_k, left_k;
 
-  //if(abs(yaw() - angle_err) < 50) rotate(yaw() - angle_err);
-
-  while (get_distance(&sensor_u) >  DISTANCE_WALL) 
+  if (get_distance(&sensor_u) >  DISTANCE_WALL - 20) 
   {
-    err = 0;
-    err = get_distance(&sensor_r) - get_distance(&sensor_l);
+    current_state = WAIT;
+  }
 
-    u = err * K_DIS;
-    motors(SPEED - u, SPEED + u);
-  } 
+  right_k = DISTANCE_WALL - get_distance(&sensor_r);
+  left_k = DISTANCE_WALL - get_distance(&sensor_l);
+
+  if(get_distance(&sensor_r) > DISTANCE) right_k = 0;
+  if(get_distance(&sensor_l) > DISTANCE) left_k = 0;
+
+  err = left_k - right_k;
+
+  u = err * K_DIS;
+  motors(SPEED - u, SPEED + u);
   
-  motor_stop();
-  // delay(1000);
+  // motor_stop();
+  wait(1);
   countL = 0;
   countR = 0;
 #endif
@@ -107,42 +112,30 @@ void rotate(float angle)
   yaw_first = 0;
   yaw_first = yaw();
 
-  while (true)
+  #if DEBUG_ENC
+    Serial.print("countL = ");
+    Serial.print(countL);
+    Serial.print(" countR = ");
+    Serial.println(countR);
+  #endif
+
+  while(true)
   {
-    #if DEBUG_ENC
-      Serial.print("countL = ");
-      Serial.print(countL);
-      Serial.print(" countR = ");
-      Serial.println(countR);
-    #endif
-    
     while(!mpu.update());
-    
+
     err = adduction(angle - yaw());
     u = err * ROT_K;
-    
 
     if(abs(u) < 50) u = 50 * sign(u);
     if(abs(u) > 180) u = 180 * sign(u);
-    
+
     motor_l(-u);
     motor_r(u);
 
     if(abs(err) > K_STOP_ROTATE) timer = millis();
-    if(millis() - timer > 1000) break;
-
-    // Serial.print(angle);
-    // Serial.print(" ");
-    // Serial.print(yaw());
-    // Serial.print(" ");
-    // Serial.print(u); 
-    // Serial.print(" ");
-    //Serial.println(err);
+    if(millis() - timer > 1000) { current_state = WAIT; return;}
   }
 
-  motor_stop();
-  wait(1000);
-  // delay(1000);
   angle_err = yaw();
   countR = 0;
   countL = 0;

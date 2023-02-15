@@ -14,6 +14,7 @@ float adduction(float angle)
 
 void wait(int time)
 {
+  if(time == 0) {mpu.update(); return;}
   float timer = millis();
   while(millis() - timer < time)
   {

@@ -2,8 +2,9 @@
 #include <VL53L0X.h>
 #include <Graph.h>
 #include <MPU9250.h>
+#include "state_machine.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #define DEBUG_ENC 0
 #define DEBUG_HAND 0
 
@@ -26,7 +27,7 @@
 
 #define DISTANCE_WALL 110
 #define DISTANCE 140
-#define K_DIS 1
+#define K_DIS 2
 #define ROT_K 6
 #define K_STOP_ROTATE 3
 
@@ -42,6 +43,8 @@ byte x = 0, y = 0;
 byte rotate_count = 0;
 int angle = 0, angle_err = 0, roll_first = 0, pitch_first = 0, yaw_first = 0;
 
+state current_state = WAIT;
+
 int countL = 0, countR = 0;
 
 void setup()
@@ -52,19 +55,7 @@ void setup()
   init_encoder();
   init_gyro();
 
-  while(!digitalRead(31))
-  {
-    mpu.update();
-    Serial.println(yaw());
-    delay(1);
-  }
-  
-  while (!mpu.update());
-
-  roll_first = mpu.getRoll();
-  pitch_first = mpu.getPitch();
-  yaw_first = yaw();
-  angle_err = 0;
+  gyro_calibration();
 }
 
 void loop()
@@ -72,7 +63,8 @@ void loop()
   if (mpu.update())
   {
     // right_hand();
-    mov_forward();
+    // mov_forward();
+    state_machine();
     //motors(SPEED, SPEED);
     //debug_dis();
   }

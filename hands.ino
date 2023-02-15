@@ -2,22 +2,22 @@ void right_hand()
 {
   if (get_distance(&sensor_r) > DISTANCE) 
   {
-    rot_right();
+    current_state = ROTATION_RIGHT;
     if(get_distance(&sensor_u) > DISTANCE)
     {
-      mov_forward();
+      current_state = MOVING;
     }
   } 
   else if (get_distance(&sensor_u) > DISTANCE) 
   {
-    mov_forward();
+    current_state = MOVING;
   } 
   else  
   {
-    rot_left();
+    current_state = ROTATION_LEFT;
     if(get_distance(&sensor_u) > DISTANCE)
     {
-      mov_forward();
+      current_state = MOVING;
     }
   }
 }
@@ -26,14 +26,14 @@ void left_hand()
 {
   if (get_distance(&sensor_l) > DISTANCE) 
   {
-    rot_left();
+    current_state = ROTATION_LEFT;
   } 
   else if (get_distance(&sensor_u) > DISTANCE) 
   {
-    mov_forward();
+    current_state = MOVING;
   } 
   else
   {
-    rot_right();
+    current_state = ROTATION_RIGHT;
   } 
 }
