@@ -76,10 +76,20 @@ void mov_forward() {
 
   int u, err = 0, right_k, left_k;
 
-  if (get_distance(&sensor_u) >  DISTANCE_WALL - 20) 
+  if (get_distance(&sensor_u) < DISTANCE_WALL || 
+      ) 
   {
     current_state = WAIT;
+    countL = 0;
+    countR = 0;
   }
+  else if ((countL + countR) / 2 >= CELL_SIZE && get_distance(&sensor_u) >  DISTANCE + 30)
+  {
+    current_state = WAIT;
+    countL = 0;
+    countR = 0;
+  }
+  Serial.println(countL);
 
   right_k = DISTANCE_WALL - get_distance(&sensor_r);
   left_k = DISTANCE_WALL - get_distance(&sensor_l);
@@ -91,11 +101,6 @@ void mov_forward() {
 
   u = err * K_DIS;
   motors(SPEED - u, SPEED + u);
-  
-  // motor_stop();
-  wait(1);
-  countL = 0;
-  countR = 0;
 #endif
 }
 
@@ -133,8 +138,10 @@ void rotate(float angle)
     motor_r(u);
 
     if(abs(err) > K_STOP_ROTATE) timer = millis();
-    if(millis() - timer > 1000) { current_state = WAIT; return;}
+    if(millis() - timer > 1000) { current_state = WAIT; break;}
   }
+
+  distance_old = get_distance(&sensor_u);
 
   angle_err = yaw();
   countR = 0;

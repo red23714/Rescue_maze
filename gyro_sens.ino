@@ -1,6 +1,5 @@
 void init_gyro()
 {
-    Serial.begin(9600);
     Wire.begin();
     delay(2000);
 

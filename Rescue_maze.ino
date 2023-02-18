@@ -27,6 +27,7 @@
 
 #define DISTANCE_WALL 110
 #define DISTANCE 140
+#define CELL_SIZE 1500
 #define K_DIS 2
 #define ROT_K 6
 #define K_STOP_ROTATE 3
@@ -45,12 +46,14 @@ int angle = 0, angle_err = 0, roll_first = 0, pitch_first = 0, yaw_first = 0;
 
 state current_state = WAIT;
 
+int distance_old = 0;
+
 int countL = 0, countR = 0;
 
 void setup()
 {
   pinMode(31, OUTPUT);
-  Serial.begin(9600);
+  Serial.begin(115200);
   init_dis();
   init_encoder();
   init_gyro();

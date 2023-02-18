@@ -3,10 +3,6 @@ void right_hand()
   if (get_distance(&sensor_r) > DISTANCE) 
   {
     current_state = ROTATION_RIGHT;
-    if(get_distance(&sensor_u) > DISTANCE)
-    {
-      current_state = MOVING;
-    }
   } 
   else if (get_distance(&sensor_u) > DISTANCE) 
   {
@@ -15,10 +11,6 @@ void right_hand()
   else  
   {
     current_state = ROTATION_LEFT;
-    if(get_distance(&sensor_u) > DISTANCE)
-    {
-      current_state = MOVING;
-    }
   }
 }
 
