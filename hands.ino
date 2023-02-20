@@ -1,4 +1,4 @@
-void right_hand() 
+void alg_right_hand() 
 {
   if (get_distance(&sensor_r) > DISTANCE) 
   {
@@ -7,6 +7,7 @@ void right_hand()
   else if (get_distance(&sensor_u) > DISTANCE) 
   {
     current_state = MOVING;
+    add_by_angle();
   } 
   else  
   {
@@ -14,7 +15,7 @@ void right_hand()
   }
 }
 
-void left_hand() 
+void alg_left_hand() 
 {
   if (get_distance(&sensor_l) > DISTANCE) 
   {

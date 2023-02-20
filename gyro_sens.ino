@@ -107,19 +107,19 @@ void print_calibration()
 
 void add_by_angle() 
 {
-  switch (angle) 
+  switch (map_angle) 
   {
     case 0:
       y++;
+      break;
+    case -90:
+      x--;
       break;
     case 90:
       x++;
       break;
     case 180:
       y--;
-      break;
-    case 270:
-      x--;
       break;
   }
 

@@ -28,7 +28,9 @@
 #define DISTANCE_WALL 110
 #define DISTANCE 140
 #define CELL_SIZE 1500
-#define K_DIS 2
+#define CELL_DIST 400
+#define K_WALL 2
+#define K_DIS 0.1
 #define ROT_K 6
 #define K_STOP_ROTATE 3
 
@@ -39,7 +41,7 @@ VL53L0X sensor_l;
 MPU9250 mpu;
 
 Graph graph;
-byte x = 0, y = 0;
+int x = 0, y = 0;
 
 byte rotate_count = 0;
 int angle = 0, angle_err = 0, roll_first = 0, pitch_first = 0, yaw_first = 0;
@@ -47,6 +49,9 @@ int angle = 0, angle_err = 0, roll_first = 0, pitch_first = 0, yaw_first = 0;
 state current_state = WAIT;
 
 int distance_old = 0;
+int cell_count = 0;
+
+int map_angle = 0;
 
 int countL = 0, countR = 0;
 
@@ -59,16 +64,19 @@ void setup()
   init_gyro();
 
   gyro_calibration();
+
+  distance_old = get_distance(&sensor_u);
+  cell_count = round(distance_old / CELL_SIZE);
 }
 
 void loop()
 {
-  if (mpu.update())
-  {
-    // right_hand();
-    // mov_forward();
-    state_machine();
-    //motors(SPEED, SPEED);
-    //debug_dis();
-  }
+  // right_hand();
+  // mov_forward();
+  state_machine();
+  if(digitalRead(31)) graph.print_graph();
+  //motors(SPEED, SPEED);
+  //debug_dis();
+
+  wait(1);
 }

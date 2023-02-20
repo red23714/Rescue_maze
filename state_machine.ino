@@ -1,23 +1,18 @@
 void state_machine()
 {
-  if(current_state == WAIT) right_hand();
-  else if(current_state == MOVING) mov_forward();
-  else if(current_state == ROTATION_RIGHT) 
+  switch(current_state)
   {
-    rot_right();
-    if(get_distance(&sensor_u) > DISTANCE)
-    {
-      current_state = MOVING;
-    }
+    case(WAIT): 
+      alg_right_hand();
+      break;
+    case(MOVING): 
+      if(mov_forward()) current_state = WAIT;
+      break;
+    case(ROTATION_RIGHT): 
+      if(rot_right()) current_state = WAIT;
+      break;
+    case(ROTATION_LEFT): 
+      if(rot_left()) current_state = WAIT;
+      break;
   }
-  else if(current_state == ROTATION_LEFT) 
-  {
-    rot_left();
-    if(get_distance(&sensor_u) > DISTANCE)
-    {
-      current_state = MOVING;
-    }
-  }
-
-  wait(1);
 }
