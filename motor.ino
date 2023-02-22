@@ -87,12 +87,14 @@ bool mov_forward() {
   if(get_distance(&sensor_l) > DISTANCE) left_k = 0;
 
   err = left_k - right_k;
-  // err_dis = cell_count * CELL_SIZE - get_distance(&sensor_u);
+  err_dis = cell_count * CELL_SIZE - get_distance(&sensor_u);
 
   u = err * K_WALL;
   u_dis = err_dis * K_DIS;
 
-  motors(SPEED - u, SPEED + u);
+  if(abs(u_dis) > 30) u_dis = 30 * sign(u_dis);
+
+  motors(SPEED - u - u_dis, SPEED + u - u_dis);
 
   if(is_stop_moving)
   {
@@ -114,8 +116,13 @@ bool rotate(float angle)
   
   float err = 0, u = 0, is_stop_rotate = false;
   static float timer = millis();
-  yaw_first = 0;
-  yaw_first = yaw();
+  static bool flag = true;
+  if(flag)
+  {
+    yaw_first = 0;
+    yaw_first = yaw();
+    flag = false;
+  }
 
   #if DEBUG_ENC
     Serial.print("countL = ");
@@ -136,21 +143,19 @@ bool rotate(float angle)
   if(abs(err) > K_STOP_ROTATE) timer = millis();
   if(millis() - timer > 1000) is_stop_rotate = true;
 
-  Serial.println(timer);
-
-  distance_old = get_distance(&sensor_u);
-  cell_count = round(distance_old / CELL_SIZE);
-
   if(is_stop_rotate)
   {
     angle_err = yaw();
     countR = 0;
     countL = 0;
+    flag = true;
+    distance_old = get_distance(&sensor_u);
+    cell_count = round(distance_old / CELL_SIZE);
     if(get_distance(&sensor_u) > DISTANCE)
     {
-      mov_forward();
       current_state = MOVING;
       add_by_angle();
+      return false;
     }
   }
 

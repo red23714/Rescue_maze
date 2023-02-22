@@ -25,12 +25,12 @@
 #define XSHUT_pin2 25
 #define XSHUT_pin3 23
 
-#define DISTANCE_WALL 110
-#define DISTANCE 140
+#define DISTANCE_WALL 120
+#define DISTANCE 170
 #define CELL_SIZE 1500
-#define CELL_DIST 400
+#define CELL_DIST 540
 #define K_WALL 2
-#define K_DIS 0.1
+#define K_DIS 0.15
 #define ROT_K 6
 #define K_STOP_ROTATE 3
 
@@ -71,12 +71,9 @@ void setup()
 
 void loop()
 {
-  // right_hand();
-  // mov_forward();
   state_machine();
-  if(digitalRead(31)) graph.print_graph();
-  //motors(SPEED, SPEED);
-  //debug_dis();
+  // if(digitalRead(31)) graph.print_graph();
+  // debug_dis();
 
   wait(1);
 }
