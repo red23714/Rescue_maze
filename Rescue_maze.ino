@@ -27,10 +27,9 @@
 
 #define DISTANCE_WALL 120
 #define DISTANCE 170
-#define CELL_SIZE 1500
-#define CELL_DIST 540
-#define K_WALL 2
-#define K_DIS 0.15
+#define CELL_SIZE 300 // 100
+#define K_WALL 1.5
+#define K_DIS 0
 #define ROT_K 6
 #define K_STOP_ROTATE 3
 
@@ -49,7 +48,6 @@ int angle = 0, angle_err = 0, roll_first = 0, pitch_first = 0, yaw_first = 0;
 state current_state = WAIT;
 
 int distance_old = 0;
-int cell_count = 0;
 
 int map_angle = 0;
 
@@ -66,13 +64,12 @@ void setup()
   gyro_calibration();
 
   distance_old = get_distance(&sensor_u);
-  cell_count = round(distance_old / CELL_SIZE);
 }
 
 void loop()
 {
   state_machine();
-  // if(digitalRead(31)) graph.print_graph();
+  if(digitalRead(31)) graph.print_graph();
   // debug_dis();
 
   wait(1);

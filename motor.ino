@@ -77,7 +77,11 @@ bool mov_forward() {
   int u, u_dis, err_dis = 0, err = 0, right_k, left_k, is_stop_moving = false;
 
   if (get_distance(&sensor_u) < DISTANCE_WALL) is_stop_moving = true;
-  else if(distance_old - get_distance(&sensor_u) > CELL_DIST) {distance_old = get_distance(&sensor_u); is_stop_moving = true;}
+  else if(distance_old - get_distance(&sensor_u) > CELL_SIZE) 
+  {
+    distance_old = get_distance(&sensor_u); 
+    is_stop_moving = true;
+  }
   // else if ((countL + countR) / 2 >= CELL_SIZE && get_distance(&sensor_u) >  DISTANCE_WALL + 30) is_stop_moving = true;
 
   right_k = DISTANCE_WALL - get_distance(&sensor_r);
@@ -87,12 +91,10 @@ bool mov_forward() {
   if(get_distance(&sensor_l) > DISTANCE) left_k = 0;
 
   err = left_k - right_k;
-  err_dis = cell_count * CELL_SIZE - get_distance(&sensor_u);
+  err_dis = distance_old - get_distance(&sensor_u);
 
   u = err * K_WALL;
   u_dis = err_dis * K_DIS;
-
-  if(abs(u_dis) > 30) u_dis = 30 * sign(u_dis);
 
   motors(SPEED - u - u_dis, SPEED + u - u_dis);
 
@@ -100,7 +102,6 @@ bool mov_forward() {
   {
     countL = 0;
     countR = 0;
-    cell_count = 0;
   }
 
   return is_stop_moving;
@@ -150,7 +151,6 @@ bool rotate(float angle)
     countL = 0;
     flag = true;
     distance_old = get_distance(&sensor_u);
-    cell_count = round(distance_old / CELL_SIZE);
     if(get_distance(&sensor_u) > DISTANCE)
     {
       current_state = MOVING;

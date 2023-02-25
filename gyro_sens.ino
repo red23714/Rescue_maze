@@ -105,25 +105,48 @@ void print_calibration()
     Serial.println();
 }
 
-void add_by_angle() 
+void add_by_angle(bool is_current = true) 
 {
-  switch (map_angle) 
+  if(is_current) 
   {
-    case 0:
-      y++;
-      break;
-    case -90:
-      x--;
-      break;
-    case 90:
-      x++;
-      break;
-    case 180:
-      y--;
-      break;
+    switch (map_angle) 
+    {
+      case 0:
+        y++;
+        break;
+      case -90:
+        x--;
+        break;
+      case 90:
+        x++;
+        break;
+      case 180:
+        y--;
+        break;
+    }
+  }
+  else
+  {
+    switch (map_angle) 
+    {
+      case 0:
+        x--;
+        break;
+      case -90:
+        y--;
+        break;
+      case 90:
+        y++;
+        break;
+      case 180:
+        x++;
+        break;
+    }
   }
 
-  graph.add_node(x, y);
+  graph.add_node(x, y, is_current);
+
+  graph.print_graph();
 }
 
 void gyro_calibration()
