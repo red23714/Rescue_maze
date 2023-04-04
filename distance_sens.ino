@@ -3,59 +3,104 @@ void init_dis()
   pinMode(XSHUT_pin1, OUTPUT);
   pinMode(XSHUT_pin2, OUTPUT);
   pinMode(XSHUT_pin3, OUTPUT);
+  pinMode(XSHUT_pin4, OUTPUT);
+
+  digitalWrite(XSHUT_pin1, 0);
+  digitalWrite(XSHUT_pin2, 0);
+  digitalWrite(XSHUT_pin3, 0);
+  digitalWrite(XSHUT_pin4, 0);
 
   Wire.begin();
   delay(500);
 
+  digitalWrite(XSHUT_pin1, 1);
+  delay(100);
   sensor_r.setAddress(sensor_r_newAddress);
-  pinMode(XSHUT_pin1, INPUT);
   delay(10);
 
+  digitalWrite(XSHUT_pin2, 1);
+  delay(100);
   sensor_u.setAddress(sensor_u_newAddress);
-  pinMode(XSHUT_pin2, INPUT);
   delay(10);
 
+  digitalWrite(XSHUT_pin3, 1);
+  delay(100);
   sensor_l.setAddress(sensor_l_newAddress);
-  pinMode(XSHUT_pin3, INPUT);
+  delay(10);
+
+  digitalWrite(XSHUT_pin4, 1);
+  delay(100);
+  sensor_b.setAddress(sensor_b_newAddress);
   delay(10);
 
   sensor_r.init();
   sensor_u.init();
   sensor_l.init();
+  sensor_b.init();
 
   delay(2000);
 
   sensor_r.setTimeout(500);
   sensor_u.setTimeout(500);
   sensor_l.setTimeout(500);
+  sensor_b.setTimeout(500);
 
   sensor_r.startContinuous();
   sensor_u.startContinuous();
   sensor_l.startContinuous();
+  sensor_b.startContinuous();
+
+#if defined LONG_RANGE
+  // lower the return signal rate limit (default is 0.25 MCPS)
+  sensor_r.setSignalRateLimit(0.1);
+  sensor_u.setSignalRateLimit(0.1);
+  sensor_l.setSignalRateLimit(0.1);
+  sensor_b.setSignalRateLimit(0.1);
+#endif
 }
 
 int get_distance(VL53L0X* sensor) 
 {
   if (sensor->timeoutOccurred()) Serial.print(" TIMEOUT");
-  return sensor->readRangeContinuousMillimeters();
+  int sensor_dis = sensor->readRangeContinuousMillimeters(); //-50
+
+  if(sensor_dis == 8190) sensor_dis = sensor->sensor_dis_old;
+  else sensor->sensor_dis_old = sensor_dis;
+
+  if(sensor_dis == 8191) return -1;
+  else return sensor_dis;
+}
+
+int get_delta_distance_up()
+{
+  if(get_distance(&sensor_u) == -1) vlFlag1 = 0;
+  else vlFlag1 = 1;
+
+  return abs(get_distance(&sensor_u) - sensor_u.sensor_dis_old);
+}
+
+int get_delta_distance_back()
+{
+  if(get_distance(&sensor_b) == -1) vlFlag2 = 0;
+  else vlFlag2 = 1;
+
+  return abs(get_distance(&sensor_b) - sensor_b.sensor_dis_old);
 }
 
 void debug_dis() 
 {
   int right_S = get_distance(&sensor_r);
-  if (right_S > 700) right_S = 700;
-
   int central_S = get_distance(&sensor_u);
-  if (central_S > 700) central_S = 700;
-
   int left_S = get_distance(&sensor_l); //sensor_r.readRangeContinuousMillimeters()
-  if (left_S > 700) left_S = 700;
+  int back_S = get_distance(&sensor_b);
 
   Serial.print(" Right_R: ");
   Serial.print(right_S);
   Serial.print(" Central_R: ");
   Serial.println(central_S);
   Serial.print(" Left_R: ");
-  Serial.println(left_S);
+  Serial.print(left_S);
+  Serial.print(" Back_R: ");
+  Serial.println(back_S);
   delay(50);
 }

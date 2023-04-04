@@ -7,7 +7,6 @@ void alg_right_hand()
   else if (get_distance(&sensor_u) > DISTANCE) 
   {
     current_state = MOVING;
-    add_by_angle();
   } 
   else  
   {

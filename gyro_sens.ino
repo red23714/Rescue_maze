@@ -105,46 +105,46 @@ void print_calibration()
     Serial.println();
 }
 
-void add_by_angle(bool is_current = true) 
+void add_by_angle(int* map_angle) //bool is_current = true
 {
-  if(is_current) 
+  // if(is_current) 
+  // {
+  switch (*map_angle) 
   {
-    switch (map_angle) 
-    {
-      case 0:
-        y++;
-        break;
-      case -90:
-        x--;
-        break;
-      case 90:
-        x++;
-        break;
-      case 180:
-        y--;
-        break;
-    }
+    case 0:
+      y++;
+      break;
+    case -90:
+      x--;
+      break;
+    case 90:
+      x++;
+      break;
+    case 180:
+      y--;
+      break;
   }
-  else
-  {
-    switch (map_angle) 
-    {
-      case 0:
-        x--;
-        break;
-      case -90:
-        y--;
-        break;
-      case 90:
-        y++;
-        break;
-      case 180:
-        x++;
-        break;
-    }
-  }
+  // }
+  // else
+  // {
+  //   switch (map_angle) 
+  //   {
+  //     case 0:
+  //       x--;
+  //       break;
+  //     case -90:
+  //       y--;
+  //       break;
+  //     case 90:
+  //       y++;
+  //       break;
+  //     case 180:
+  //       x++;
+  //       break;
+  //   }
+  // }
 
-  graph.add_node(x, y, is_current);
+  graph.add_node(x, y);
 
   graph.print_graph();
 }
