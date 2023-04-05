@@ -72,6 +72,30 @@ int get_distance(VL53L0X* sensor)
   return sensor_dis;
 }
 
+int get_delta_distance_up()
+{
+  int dis_old = sensor_u.sensor_dis_old;
+  int dist = get_distance(&sensor_u);
+
+  if(dist == -1 || dist > 700 ||
+     dis_old == -1 || dis_old > 700) vlFlag1 = 0;
+  else vlFlag1 = 1;
+
+  return dis_old - dist;
+}
+
+int get_delta_distance_back()
+{
+  int dis_old = sensor_b.sensor_dis_old;
+  int dist = get_distance(&sensor_b);
+
+  if(dist == -1 || dist > 700 ||
+     dis_old == -1 || dis_old > 700) vlFlag2 = 0;
+  else vlFlag2 = 1;
+
+  return dist - dis_old;
+}
+
 void debug_dis() 
 {
   int right_S = get_distance(&sensor_r);

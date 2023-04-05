@@ -75,7 +75,10 @@ bool mov_forward(int* map_angle)
   delay(10);
 #endif
 
-  int u, err = 0, right_k, left_k;
+  int u, err = 0, u_dis, right_k, left_k;
+
+  static int err_dis = 0;
+
   bool is_stop_moving = false;
 
   right_k = DISTANCE_WALL - get_distance(&sensor_r);
@@ -86,18 +89,47 @@ bool mov_forward(int* map_angle)
 
   err = left_k - right_k;
 
+  int delta_up = get_delta_distance_up();
+  int delta_back = get_delta_distance_back();
+  int delta_encoder = get_delta_encoder();
+
+  if(!vlFlag1 && !vlFlag2) vlFlag3 = 1;
+  else vlFlag3 = 0;
+  err_dis += (delta_up * vlFlag1 + delta_back * vlFlag2 + delta_encoder * vlFlag3) / (vlFlag1 + vlFlag2 + vlFlag3);
+
   u = err * K_WALL;
+  u_dis = (CELL_SIZE - err_dis) * K_DIS;
+
+  // Serial.print(err_dis);
+  // Serial.print(" ");
+  // Serial.print(delta_up);
+  // Serial.print(" ");
+  // Serial.print(delta_back);
+  // Serial.print(" ");
+  // Serial.print(delta_encoder);
+  // Serial.print(" ");
+  // Serial.print(vlFlag1);
+  // Serial.print(" ");
+  // Serial.print(vlFlag2);
+  // Serial.print(" ");
+  // Serial.println(vlFlag3);
 
   if (get_distance(&sensor_u) < DISTANCE_WALL || get_distance(&sensor_u) == -1) is_stop_moving = true;
-  else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
+  else if(abs(CELL_SIZE - err_dis) < 30) is_stop_moving = true;
+  // else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
 
-  motors(SPEED - u, SPEED + u);
+  if(abs(u_dis) > 120) u_dis = sign(u_dis) * 120;
+  if(abs(u_dis) < 30) u_dis = sign(u_dis) * 30;
+
+  motors(-u + u_dis, u + u_dis);
 
   if(is_stop_moving)
   {
     countL = 0;
     countR = 0;
     add_by_angle(map_angle);
+    err_dis = 0;
+    count_old = 0;
   }
 
   return is_stop_moving;
