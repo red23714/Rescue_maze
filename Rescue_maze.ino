@@ -8,7 +8,7 @@
 #define DEBUG_ENC 0
 #define DEBUG_HAND 0
 
-#define LONG_RANGE
+// #define LONG_RANGE
 
 #define M1_1 5
 #define M1_2 6
@@ -30,14 +30,16 @@
 #define XSHUT_pin4 26
 
 #define DISTANCE_WALL 120 // 120
-#define DISTANCE 200 //170
+#define DISTANCE 170 //170
+
 #define CELL_SIZE 350 // 350
-#define K_WALL 1.5
-#define K_WALL_I 5
-#define K_CALIBRATION 20
-#define K_DIS 1
-#define ROT_K 10 // 6
-#define K_STOP_ROTATE 3
+#define CELL_SIZE_ENCODER 1700
+
+#define K_WALL 1.5 // 1.5
+#define K_WALL_I 5 // 5
+#define K_CALIBRATION 20 // 20
+#define K_ROT 10 // 10
+#define K_STOP_ROTATE 3 // 3
 
 VL53L0X sensor_r;
 VL53L0X sensor_u;
@@ -49,15 +51,15 @@ MPU9250 mpu;
 Graph graph;
 int x = 0, y = 0;
 
-// byte rotate_count = 0;
 int angle = 0, angle_err = 0, roll_first = 0, pitch_first = 0, yaw_first = 0;
 
 state current_state = WAIT;
 
 int distance_old = 0;
-int vlFlag1 = 0, vlFlag2 = 0, vlFlag3 = 0;
 
-int countL = 0, countR = 0, count_old;
+int countL = 0, countR = 0;
+
+void add_by_angle(int*, bool = true);
 
 void setup()
 {
@@ -69,8 +71,16 @@ void setup()
 
   gyro_calibration();
 
-  if(get_distance(&sensor_u) > 1000) distance_old = get_distance(&sensor_u);
-  else distance_old = get_distance(&sensor_b);
+  graph.add_node(0, 1);
+  graph.add_node(1, 1);
+  graph.add_node(1, 2);
+  graph.add_node(2, 1, false);
+  graph.add_node(3, 1);
+  graph.add_node(3, 2);
+  graph.add_node(3, 1);
+  graph.add_node(2, 1);
+  graph.add_node(1, 1);
+  graph.add_node(4, 1);
 }
 
 void loop()
@@ -80,11 +90,9 @@ void loop()
   while(true)
   {
     state_machine(&map_angle);
-    // Serial.print(get_distance(&sensor_u));
-    // Serial.print(" ");
-    // Serial.print(distance_old);
-    // Serial.print(" ");
-    // Serial.println(get_distance(&sensor_b));
+    
+    if(x == 5 && y == 1) return_to_point(&map_angle);
+
     // debug_dis();
 
     wait(1);

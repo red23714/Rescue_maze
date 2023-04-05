@@ -64,27 +64,12 @@ int get_distance(VL53L0X* sensor)
   if (sensor->timeoutOccurred()) Serial.print(" TIMEOUT");
   int sensor_dis = sensor->readRangeContinuousMillimeters(); //-50
 
+  if(sensor_dis == 8191) return -1;
+
   if(sensor_dis == 8190) sensor_dis = sensor->sensor_dis_old;
   else sensor->sensor_dis_old = sensor_dis;
 
-  if(sensor_dis == 8191) return -1;
-  else return sensor_dis;
-}
-
-int get_delta_distance_up()
-{
-  if(get_distance(&sensor_u) == -1) vlFlag1 = 0;
-  else vlFlag1 = 1;
-
-  return abs(get_distance(&sensor_u) - sensor_u.sensor_dis_old);
-}
-
-int get_delta_distance_back()
-{
-  if(get_distance(&sensor_b) == -1) vlFlag2 = 0;
-  else vlFlag2 = 1;
-
-  return abs(get_distance(&sensor_b) - sensor_b.sensor_dis_old);
+  return sensor_dis;
 }
 
 void debug_dis() 

@@ -75,8 +75,7 @@ bool mov_forward(int* map_angle)
   delay(10);
 #endif
 
-  int u, err = 0, u_dis, right_k, left_k;
-  static int err_dis = 0;
+  int u, err = 0, right_k, left_k;
   bool is_stop_moving = false;
 
   right_k = DISTANCE_WALL - get_distance(&sensor_r);
@@ -87,36 +86,12 @@ bool mov_forward(int* map_angle)
 
   err = left_k - right_k;
 
-  if(!vlFlag1 && !vlFlag2) vlFlag3 = 1;
-  else vlFlag3 = 0;
-  err_dis += (get_delta_distance_up() * vlFlag1 + get_delta_distance_back() * vlFlag2 + get_delta_encoder() * vlFlag3) / (vlFlag1 + vlFlag2 + vlFlag3);
-
   u = err * K_WALL;
-  u_dis = (CELL_SIZE - err_dis) * K_DIS;
 
-  if (get_distance(&sensor_u) < DISTANCE_WALL) is_stop_moving = true;
-  // else 
-  // {
-  //   if(get_distance(&sensor_u) > 1000)
-  //   {
-  //     if(get_distance(&sensor_b) - distance_old > CELL_SIZE) //&& abs(err) < K_CALIBRATION
-  //     {
-  //       distance_old = get_distance(&sensor_b); 
-  //       is_stop_moving = true;
-  //     }
-  //   }
-  //   else
-  //   {
-  //     if(distance_old - get_distance(&sensor_u) > CELL_SIZE) //&& abs(err) < K_CALIBRATION
-  //     {
-  //       distance_old = get_distance(&sensor_u); 
-  //       is_stop_moving = true;
-  //     }
-  //   }
-  // }
-  // // else if ((countL + countR) / 2 >= CELL_SIZE && get_distance(&sensor_u) >  DISTANCE_WALL + 30) is_stop_moving = true;
+  if (get_distance(&sensor_u) < DISTANCE_WALL || get_distance(&sensor_u) == -1) is_stop_moving = true;
+  else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
 
-  motors(SPEED - u + u_dis, SPEED + u + u_dis);
+  motors(SPEED - u, SPEED + u);
 
   if(is_stop_moving)
   {
@@ -160,7 +135,7 @@ bool rotate(float angle)
   i += err * delta;
   if(abs(i) > 10) i = 10 * sign(i);
 
-  u = err * ROT_K + i * K_WALL_I;
+  u = err * K_ROT + i * K_WALL_I;
 
   timer_i = millis();
 
@@ -178,28 +153,17 @@ bool rotate(float angle)
     countR = 0;
     countL = 0;
     flag = true;
-    
-    if(get_distance(&sensor_u) > 1000) distance_old = get_distance(&sensor_u);
-    else distance_old = get_distance(&sensor_b);
-  
-    if(get_distance(&sensor_u) > DISTANCE)
-    {
-      current_state = MOVING;
-      return false;
-    }
   }
 
   return is_stop_rotate;
 }
 
-int rot_right(int* map_angle) 
+int rot_right() 
 {
-  *map_angle = adduction(*map_angle + 90);
   return rotate(90);
 }
 
-int rot_left(int* map_angle) 
+int rot_left() 
 {
-  *map_angle = adduction(*map_angle - 90);
   return rotate(-90);
 }
