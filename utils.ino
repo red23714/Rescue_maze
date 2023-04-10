@@ -12,12 +12,18 @@ float adduction(float angle)
     return angle;
 }
 
-void wait(int time_wait)
+void wait(int time_wait, Distance_data* distance_data)
 {
   if(time_wait == 0) {mpu.update(); return;}
+  
   float timer_wait = millis();
+  
   while(millis() - timer_wait < time_wait)
   {
     mpu.update();
   }
+  
+  distance_data->right_dist = get_distance(&sensor_r);
+  distance_data->central_dist = get_distance(&sensor_u);
+  distance_data->left_dist = get_distance(&sensor_l);
 }

@@ -1,29 +1,33 @@
-void state_machine(int* map_angle)
+void state_machine(Map_data* map_data, Package_data* package_data, Distance_data* distance_data, state* current_state)
 {
-  switch(current_state)
+  switch(*current_state)
   {
-    case(WAIT): 
-      alg_right_hand(map_angle);
+    case WAIT: 
+      alg_right_hand(map_data, distance_data, current_state);
 
       motor_stop();
-      wait(1000);
+      wait(100, distance_data);
       break;
-    case(MOVING): 
-      if(mov_forward(map_angle)) current_state = WAIT;
+    case MOVING: 
+      if(mov_forward(map_data, distance_data)) *current_state = WAIT;
       break;
-    case(ROTATION_RIGHT): 
+    case ROTATION_RIGHT: 
       if(rot_right()) 
       {
-        if(get_distance(&sensor_u) > DISTANCE || get_distance(&sensor_u) == -1) current_state = MOVING;
-        else current_state = WAIT;
+        if(distance_data->central_dist > DISTANCE || distance_data->central_dist == -1) *current_state = MOVING;
+        else *current_state = WAIT;
       }
       break;
-    case(ROTATION_LEFT): 
+    case ROTATION_LEFT: 
       if(rot_left()) 
       {
-        if(get_distance(&sensor_u) > DISTANCE || get_distance(&sensor_u) == -1) current_state = MOVING;
-        else current_state = WAIT;
+        if(distance_data->central_dist > DISTANCE || distance_data->central_dist == -1) *current_state = MOVING;
+        else *current_state = WAIT;
       }
+      break;
+    case GIVING:
+      giving(package_data);
+
       break;
   }
 }

@@ -1,0 +1,21 @@
+#pragma once
+
+#include <Wire.h>
+#include <MPU9250.h>
+
+class Gyro_sens : public MPU9250
+{
+public:
+  int roll_first = 0, pitch_first = 0, yaw_first = 0;
+
+  void init_gyro();
+
+  float roll();
+  float pitch();
+  float yaw();
+
+  void print_roll_pitch_yaw();
+  void print_calibration();
+
+  void gyro_calibration();
+};

@@ -1,12 +1,12 @@
-void add_by_angle(int* map_angle, bool discovered = true)
+void add_by_angle(Map_data* map_data, bool discovered = true)
 {
   int x_local, y_local;
-  x_local = x;
-  y_local = y;
+  x_local = map_data->x;
+  y_local = map_data->y;
 
   if(!discovered)
   {
-    switch (*map_angle) 
+    switch (map_data->map_angle) 
     {
       case 0:
         x_local--;
@@ -29,40 +29,38 @@ void add_by_angle(int* map_angle, bool discovered = true)
   }
   else 
   {
-    switch (*map_angle) 
+    switch (map_data->map_angle) 
     {
       case 0:
-        y++;
+        map_data->y++;
         break;
       case -90:
-        x++;
+        map_data->x++;
         break;
       case 90:
-        x--;
+        map_data->x--;
         break;
       case 180:
-        y--;
+        map_data->y--;
         break;
       case -180:
-        y--;
+        map_data->y--;
         break;
     }
 
-    graph.add_node(x, y);
+    graph.add_node(map_data->x, map_data->y);
   }
 
-  graph.print_graph();
+  // graph.print_graph();
 
   // Serial.println(*map_angle);
 }
 
-void return_to_point(int* map_angle) 
+void return_to_point(Map_data map_data) 
 {
   Serial.println("Lets goooo");
   node point = graph.get_not_discovered();
   Vec<enum moves> moves = graph.get_move(point, 0);
-
-
 
   for (int i = 0; i < moves.size(); i++) 
   {
@@ -83,6 +81,5 @@ void return_to_point(int* map_angle)
       default:
         break;
     }
-    wait(1000);
   }
 }
