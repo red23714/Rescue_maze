@@ -18,3 +18,9 @@ struct Distance_data
   int central_dist = 0;
   int left_dist = 0;
 };
+
+struct Encoder_data
+{
+  int countL = 0;
+  int countR = 0;
+};
