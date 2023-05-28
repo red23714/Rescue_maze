@@ -1,0 +1,10 @@
+motor_back d7 d9
+encoder d3
+motor_forward d13 d10
+encoder d2
+
+vl_left d23
+vl_center d25
+vl_right d22
+
+serva d11

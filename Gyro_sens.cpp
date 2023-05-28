@@ -22,7 +22,7 @@ void Gyro_sens::init_gyro()
     calibrateAccelGyro();
 
     print_calibration();
-    verbose(false);
+    // verbose(false);
 }
 
 float Gyro_sens::adduction(float angle)
@@ -115,13 +115,26 @@ void Gyro_sens::print_calibration()
     Serial.println();
 }
 
-void Gyro_sens::gyro_calibration()
+void Gyro_sens::gyro_calibration(int port)
 {
-    while(!digitalRead(31)) //!digitalRead(31)
+    if(port == -1) 
     {
-        update();
-        Serial.println(yaw());
-        delay(1);
+        float timer_wait = millis();
+        while(millis() - timer_wait < 5000)
+        {
+            update();
+            Serial.println(yaw());
+            delay(1);
+        }
+    }
+    else
+    {
+        while(!digitalRead(port)) //!digitalRead(31)
+        {
+            update();
+            Serial.println(yaw());
+            delay(1);
+        }
     }
     
     while (!update());

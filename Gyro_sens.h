@@ -23,7 +23,7 @@ public:
   void print_roll_pitch_yaw();
   void print_calibration();
 
-  void gyro_calibration();
+  void gyro_calibration(int);
 
 private:
   float adduction(float);

@@ -6,16 +6,15 @@
 
 #include "Graph.h"
 #include "Gyro_sens.h"
-#include "data.h"
 #include "state_machine.h"
 #include "utils.h"
 
 #define LONG_RANGE
 
-#define M1_1 5
-#define M1_2 6
-#define M2_1 7
-#define M2_2 8
+#define M1_1 7
+#define M1_2 9
+#define M2_1 13
+#define M2_2 10
 
 #define sensor_r_newAddress 42
 #define sensor_u_newAddress 43
@@ -23,9 +22,9 @@
 
 #define BUTTON_PIN 31
 
-#define XSHUT_pin1 23
-#define XSHUT_pin2 24
-#define XSHUT_pin3 25
+#define XSHUT_pin_r 22
+#define XSHUT_pin_u 25
+#define XSHUT_pin_l 23
 
 #define SPEED 100
 
@@ -44,8 +43,19 @@
 class Robot
 {  
 public:
-    int init();
+    void init(bool = true, bool = true, bool = true, bool = true, bool = true);
+
     void state_machine();
+
+    void print_dis();
+    void print_enc();
+    void print_map();
+    void print_save();
+    void print_gyro();
+
+    void wait(int);
+    void motors(int, int);
+    void motor_stop();
 private:
     Gyro_sens mpu;
     Graph graph;
@@ -68,6 +78,9 @@ private:
     int countL = 0;
     int countR = 0;
 
+    int side = 0;
+    int count_save = 0;
+
     bool mov_forward();
     bool rotate(float);
     int rot_right();
@@ -80,11 +93,8 @@ private:
     void init_servo();
     int giving(); 
 
-    void wait(int);
-
     void init_dis();
     int get_distance(VL53L0X); 
-    void debug_dis();
 
     void init_encoder();
     static void encL();
@@ -94,6 +104,4 @@ private:
 
     void motor_l(int);
     void motor_r(int);
-    void motors(int, int);
-    void motor_stop();
 };

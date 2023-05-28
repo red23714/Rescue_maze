@@ -1,15 +1,21 @@
 #include "Robot.h"
 
 //Инициализация всех датчиков
-int Robot::init()
+void Robot::init(bool is_button, bool is_dis, bool is_enc, bool is_servo, bool is_mpu)
 {
-  pinMode(BUTTON_PIN, OUTPUT);
+  if(is_button) pinMode(BUTTON_PIN, OUTPUT);
   
-  init_dis();
-  init_encoder();
-  init_servo();
+  if(is_dis) init_dis();
+  if(is_enc) init_encoder();
+  if(is_servo) init_servo();
 
-  mpu.init_gyro();
+  if(is_mpu) 
+  {
+    mpu.init_gyro();
+    if(is_button) mpu.gyro_calibration(BUTTON_PIN);
+    else mpu.gyro_calibration(-1);
+  }
+
 }
 
 //Расчет движения робота
@@ -29,8 +35,11 @@ bool Robot::mov_forward()
 
   u = err * K_WALL;
 
-  if (central_dist < DISTANCE_WALL) is_stop_moving = true;
-  else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
+  if((mpu.pitch() - mpu.pitch_first) < 50)
+  {
+    if (central_dist < DISTANCE_WALL) is_stop_moving = true;
+    else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
+  }
 
   motors(SPEED - u, SPEED + u);
 
@@ -125,6 +134,32 @@ void Robot::alg_left_hand()
   
 }
 
+//Возврат к точке на карте где робот не был
+void Robot::return_to_point() 
+{
+  Serial.println("Lets goooo");
+  node point = graph.get_not_discovered();
+  Vec<enum moves> moves = graph.get_move(point, 0);
+
+  for (int i = 0; i < moves.size(); i++) 
+  {
+    switch(moves[i])
+    {
+      case ROTATE_RIGHT:
+        current_state = ROTATION_RIGHT;
+        break;
+      case ROTATE_LEFT:
+        current_state = ROTATION_LEFT;
+        break;
+      case MOVE_FORWARD:
+        current_state = MOVING;
+        break;
+      default:
+        break;
+    }
+  }
+}
+
 void Robot::state_machine()
 {
   switch(current_state)
@@ -170,32 +205,6 @@ int Robot::giving()
   
 }
 
-//Возврат к точке на карте где робот не был
-void Robot::return_to_point() 
-{
-  Serial.println("Lets goooo");
-  node point = graph.get_not_discovered();
-  Vec<enum moves> moves = graph.get_move(point, 0);
-
-  for (int i = 0; i < moves.size(); i++) 
-  {
-    switch(moves[i])
-    {
-      case ROTATE_RIGHT:
-        current_state = ROTATION_RIGHT;
-        break;
-      case ROTATE_LEFT:
-        current_state = ROTATION_LEFT;
-        break;
-      case MOVE_FORWARD:
-        current_state = MOVING;
-        break;
-      default:
-        break;
-    }
-  }
-}
-
 //Обновление всех показаний с датчиков
 void Robot::wait(int time_wait)
 {
@@ -207,64 +216,47 @@ void Robot::wait(int time_wait)
     central_dist = get_distance(sensor_u);
     left_dist = get_distance(sensor_l);
 
+    if(Serial1.available()) 
+    {
+      side = 1;
+      count_save = Serial1.read();
+    }
+    if(Serial2.available()) 
+    {
+      side = 2;
+      count_save = Serial2.read();
+    }
+
     mpu.update();
   }
   while(millis() - timer_wait < time_wait);
 }
 
-//Работа с энкодерами
-void Robot::init_encoder()
-{
-  attachInterrupt(0, encL, RISING);
-  attachInterrupt(1, encR, RISING);
-  instance_ = this;
-}
-
-void Robot::encL() 
-{
-  instance_->handleEncL();
-}
-
-void Robot::encR() 
-{
-  instance_->handleEncR();
-}
-
-void Robot::handleEncL() {
-  countL++;
-}
-
-void Robot::handleEncR() {
-  countR++;
-}
-
-Robot * Robot::instance_;
-
 //Работа с датчиками расстояния
 void Robot::init_dis() 
 {
-  pinMode(XSHUT_pin1, OUTPUT);
-  pinMode(XSHUT_pin2, OUTPUT);
-  pinMode(XSHUT_pin3, OUTPUT);
+  pinMode(XSHUT_pin_r, OUTPUT);
+  pinMode(XSHUT_pin_u, OUTPUT);
+  pinMode(XSHUT_pin_l, OUTPUT);
 
-  digitalWrite(XSHUT_pin1, 0);
-  digitalWrite(XSHUT_pin2, 0);
-  digitalWrite(XSHUT_pin3, 0);
+  digitalWrite(XSHUT_pin_r, 0);
+  digitalWrite(XSHUT_pin_u, 0);
+  digitalWrite(XSHUT_pin_l, 0);
 
   Wire.begin();
   delay(500);
 
-  digitalWrite(XSHUT_pin1, 1);
+  digitalWrite(XSHUT_pin_r, 1);
   delay(100);
   sensor_r.setAddress(sensor_r_newAddress);
   delay(10);
 
-  digitalWrite(XSHUT_pin2, 1);
+  digitalWrite(XSHUT_pin_u, 1);
   delay(100);
   sensor_u.setAddress(sensor_u_newAddress);
   delay(10);
 
-  digitalWrite(XSHUT_pin3, 1);
+  digitalWrite(XSHUT_pin_l, 1);
   delay(100);
   sensor_l.setAddress(sensor_l_newAddress);
   delay(10);
@@ -304,16 +296,74 @@ int Robot::get_distance(VL53L0X sensor)
   return sensor_dis;
 }
 
-void Robot::debug_dis() 
+//Вывод отладчной информации
+void Robot::print_dis() 
 {
   Serial.print(" Right_R: ");
   Serial.print(right_dist);
   Serial.print(" Central_R: ");
-  Serial.println(central_dist);
+  Serial.print(central_dist);
   Serial.print(" Left_R: ");
   Serial.println(left_dist);
-  delay(50);
 }
+
+void Robot::print_enc()
+{
+  Serial.print("countL: ");
+  Serial.print(countL);
+  Serial.print(" ");
+  Serial.print("countR: ");
+  Serial.println(countR);
+}
+
+void Robot::print_map()
+{
+  graph.print_graph();
+}
+
+void Robot::print_save()
+{
+  Serial.print("Side: ");
+  Serial.print(side);
+  Serial.print(" ");
+  Serial.print("Count: ");
+  Serial.println(count_save);
+}
+
+void Robot::print_gyro()
+{
+  mpu.print_roll_pitch_yaw();
+}
+
+//Работа с энкодерами
+void Robot::init_encoder()
+{
+  attachInterrupt(3, encL, RISING);
+  attachInterrupt(2, encR, RISING);
+  instance_ = this;
+}
+
+void Robot::encL() 
+{
+  instance_->handleEncL();
+}
+
+void Robot::encR() 
+{
+  instance_->handleEncR();
+}
+
+void Robot::handleEncL() 
+{
+  countL++;
+}
+
+void Robot::handleEncR() 
+{
+  countR++;
+}
+
+Robot * Robot::instance_;
 
 //Работа с моторами
 void Robot::motor_l(int value) 
