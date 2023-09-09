@@ -1,7 +1,8 @@
+#include "HardwareSerial.h"
 #include "Robot.h"
 
 //Инициализация всех датчиков
-void Robot::init(bool is_button, bool is_dis, bool is_enc, bool is_servo, bool is_mpu)
+void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_servo)
 {
   if(is_button) pinMode(BUTTON_PIN, OUTPUT);
   
@@ -35,13 +36,10 @@ bool Robot::mov_forward()
 
   u = err * K_WALL;
 
-  if((mpu.pitch() - mpu.pitch_first) < 50)
-  {
-    if (central_dist < DISTANCE_WALL) is_stop_moving = true;
-    else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
-  }
+  if (central_dist < DISTANCE_WALL && central_dist != -1 && central_dist != 0) is_stop_moving = true;
+  // else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
 
-  motors(SPEED - u, SPEED + u);
+  motors(SPEED + u, SPEED - u);
 
   if(is_stop_moving)
   {
@@ -80,7 +78,7 @@ bool Robot::rotate(float angle)
   // if(abs(u) < 50) u = 50 * sign(u);
   if(abs(u) > 180) u = 180 * sign(u);
 
-  motors(-u, u);
+  motors(u, -u);
 
   if(abs(err) > K_STOP_ROTATE) timer = millis();
   if(millis() - timer > 1000) is_stop_rotate = true;
@@ -108,7 +106,7 @@ int Robot::rot_left()
 //Изменение состаяний робота и state машина
 void Robot::alg_right_hand() 
 {
-  if (right_dist > DISTANCE || right_dist == -1) 
+  if (right_dist > DISTANCE || right_dist == -1 || right_dist == 0) 
   {
     current_state = ROTATION_RIGHT;
 
@@ -116,7 +114,7 @@ void Robot::alg_right_hand()
 
     map_angle = adduction(map_angle - 90);
   } 
-  else if (central_dist > DISTANCE || central_dist == -1) 
+  else if (central_dist > DISTANCE || central_dist == -1 || central_dist == 0) 
   {
     current_state = MOVING;
 
@@ -127,6 +125,8 @@ void Robot::alg_right_hand()
     current_state = ROTATION_LEFT;
     map_angle = adduction(map_angle + 90);
   }
+
+  Serial.println(current_state);
 }
 
 void Robot::alg_left_hand() 
@@ -162,6 +162,7 @@ void Robot::return_to_point()
 
 void Robot::state_machine()
 {
+  // Serial.println(current_state);
   switch(current_state)
   {
     case WAIT: 
@@ -189,8 +190,6 @@ void Robot::state_machine()
 
       break;
   }
-
-  wait(1);
 }
 
 //Выдача спаснабора и инициализация сервы
@@ -394,7 +393,7 @@ void Robot::motor_l(int value)
 
 void Robot::motor_r(int value) 
 { 
-  int sign_v = sign(value);
+  int sign_v = -1 * sign(value);
   if (abs(value) > 255) value = 255 * sign_v;
 
   value = sign_v*(255 - abs(value));

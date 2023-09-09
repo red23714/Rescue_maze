@@ -9,7 +9,9 @@
 #include "state_machine.h"
 #include "utils.h"
 
-#define LONG_RANGE
+// #define LONG_RANGE
+
+#define DEBUG 1
 
 #define M1_1 7
 #define M1_2 9
@@ -43,7 +45,7 @@
 class Robot
 {  
 public:
-    void init(bool = true, bool = true, bool = true, bool = true, bool = true);
+    void init(bool is_button = true, bool is_mpu = true, bool is_dis = true, bool is_enc = true, bool is_servo = true);
 
     void state_machine();
 
@@ -53,9 +55,12 @@ public:
     void print_save();
     void print_gyro();
 
+    bool mov_forward();
+    bool rotate(float);
+    int rot_right();
+    int rot_left();
+
     void wait(int);
-    void motors(int, int);
-    void motor_stop();
 private:
     Gyro_sens mpu;
     Graph graph;
@@ -81,11 +86,6 @@ private:
     int side = 0;
     int count_save = 0;
 
-    bool mov_forward();
-    bool rotate(float);
-    int rot_right();
-    int rot_left();
-
     void alg_right_hand();
     void alg_left_hand();
     void return_to_point();
@@ -104,4 +104,7 @@ private:
 
     void motor_l(int);
     void motor_r(int);
+
+    void motors(int, int);
+    void motor_stop();
 };

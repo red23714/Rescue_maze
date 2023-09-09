@@ -13,6 +13,7 @@ void Gyro_sens::init_gyro()
         delay(5000);
         }
     }
+    else Serial.println("MPU work");
 
     selectFilter(QuatFilterSel::MADGWICK_WITHOUT_MAG);
     //setFilterIterations(10);
@@ -59,20 +60,6 @@ float Gyro_sens::yaw()
 
 void Gyro_sens::print_roll_pitch_yaw() 
 {
-    Serial.print("Acc: ");
-    Serial.print(getAccX());
-    Serial.print(" ");
-    Serial.print(getAccY());
-    Serial.print(" ");
-    Serial.print(getAccZ());
-    Serial.print(" ");
-    Serial.print("Gyro: ");
-    Serial.print(getGyroX());
-    Serial.print(" ");
-    Serial.print(getGyroY());
-    Serial.print(" ");
-    Serial.print(getGyroZ());
-    Serial.print(" ");
     Serial.print("Angles: ");
     Serial.print(getYaw());
     Serial.print(" ");
