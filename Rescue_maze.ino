@@ -8,7 +8,7 @@ void setup()
   // Serial1.begin(9600);
   // Serial2.begin(9600);
 
-  robot.init(false, true, true, true, false);
+  robot.init(true, true, true, true, true, true);
 }
 
 void loop()

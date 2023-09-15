@@ -1,15 +1,11 @@
 #include "HardwareSerial.h"
 #include "Robot.h"
 
-//Инициализация всех датчиков
-void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_servo)
+//Инициализация всех датчиков с настройкой
+void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_servo, bool is_color)
 {
   if(is_button) pinMode(BUTTON_PIN, OUTPUT);
   
-  if(is_dis) init_dis();
-  if(is_enc) init_encoder();
-  if(is_servo) init_servo();
-
   if(is_mpu) 
   {
     mpu.init_gyro();
@@ -17,9 +13,89 @@ void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_
     else mpu.gyro_calibration(-1);
   }
 
+  if(is_dis) init_dis();
+  if(is_enc) init_encoder();
+  if(is_servo) init_servo();
+  if(is_color) init_color();
 }
 
-//Расчет движения робота
+//Машина состояний, где переключаются текущие действия робота
+void Robot::state_machine()
+{
+  // Serial.println(current_state);
+  switch(current_state)
+  {
+    case WAIT: 
+      alg_right_hand();
+      break;
+    case MOVING: 
+      if(mov_forward()) current_state = WAIT;
+      break;
+    case ROTATION_RIGHT: 
+      if(rot_right()) 
+      {
+        if(central_dist > DISTANCE || central_dist == -1) current_state = MOVING;
+        else current_state = WAIT;
+      }
+      break;
+    case ROTATION_LEFT: 
+      if(rot_left()) 
+      {
+        if(central_dist > DISTANCE || central_dist == -1) current_state = MOVING;
+        else current_state = WAIT;
+      }
+      break;
+    case GIVING:
+      giving();
+
+      break;
+  }
+}
+
+//Вывод показания датчиков расстояния
+void Robot::print_dis() 
+{
+  Serial.print(" Right_R: ");
+  Serial.print(right_dist);
+  Serial.print(" Central_R: ");
+  Serial.print(central_dist);
+  Serial.print(" Left_R: ");
+  Serial.println(left_dist);
+}
+
+//Вывод показания энкодеров
+void Robot::print_enc()
+{
+  Serial.print("countL: ");
+  Serial.print(countL);
+  Serial.print(" ");
+  Serial.print("countR: ");
+  Serial.println(countR);
+}
+
+//Вывод карты построенной роботом
+void Robot::print_map()
+{
+  graph.print_graph();
+}
+
+//Вывод с какой стороны обнаружен спаснабор и кол-во, которое нужно выдать
+void Robot::print_save()
+{
+  Serial.print("Side: ");
+  Serial.print(side);
+  Serial.print(" ");
+  Serial.print("Count: ");
+  Serial.println(count_save);
+}
+
+//Вывод показания гироскопа
+void Robot::print_gyro()
+{
+  mpu.print_roll_pitch_yaw();
+}
+
+//Движение вперед с выравниванием по боковым датчикам
 bool Robot::mov_forward() 
 {
   int u, err = 0, right_err, left_err;
@@ -51,6 +127,7 @@ bool Robot::mov_forward()
   return is_stop_moving;
 }
 
+//Функция поворота с помощью гироскопа
 bool Robot::rotate(float angle)
 {
   float err = 0, u = 0, is_stop_rotate = false, delta, i;
@@ -93,115 +170,16 @@ bool Robot::rotate(float angle)
   return is_stop_rotate;
 }
 
+//Поворот на 90 градусов
 int Robot::rot_right() 
 {
   return rotate(90);
 }
 
+//Поворот на -90 градусов
 int Robot::rot_left() 
 {
   return rotate(-90);
-}
-
-//Изменение состаяний робота и state машина
-void Robot::alg_right_hand() 
-{
-  if (right_dist > DISTANCE || right_dist == -1 || right_dist == 0) 
-  {
-    current_state = ROTATION_RIGHT;
-
-    if(left_dist > DISTANCE) graph.add_by_angle(map_angle, false);
-
-    map_angle = adduction(map_angle - 90);
-  } 
-  else if (central_dist > DISTANCE || central_dist == -1 || central_dist == 0) 
-  {
-    current_state = MOVING;
-
-    if(left_dist > DISTANCE) graph.add_by_angle(map_angle, false);
-  } 
-  else  
-  {
-    current_state = ROTATION_LEFT;
-    map_angle = adduction(map_angle + 90);
-  }
-
-  Serial.println(current_state);
-}
-
-void Robot::alg_left_hand() 
-{
-  
-}
-
-//Возврат к точке на карте где робот не был
-void Robot::return_to_point() 
-{
-  Serial.println("Lets goooo");
-  node point = graph.get_not_discovered();
-  Vec<enum moves> moves = graph.get_move(point, 0);
-
-  for (int i = 0; i < moves.size(); i++) 
-  {
-    switch(moves[i])
-    {
-      case ROTATE_RIGHT:
-        current_state = ROTATION_RIGHT;
-        break;
-      case ROTATE_LEFT:
-        current_state = ROTATION_LEFT;
-        break;
-      case MOVE_FORWARD:
-        current_state = MOVING;
-        break;
-      default:
-        break;
-    }
-  }
-}
-
-void Robot::state_machine()
-{
-  // Serial.println(current_state);
-  switch(current_state)
-  {
-    case WAIT: 
-      alg_right_hand();
-      break;
-    case MOVING: 
-      if(mov_forward()) current_state = WAIT;
-      break;
-    case ROTATION_RIGHT: 
-      if(rot_right()) 
-      {
-        if(central_dist > DISTANCE || central_dist == -1) current_state = MOVING;
-        else current_state = WAIT;
-      }
-      break;
-    case ROTATION_LEFT: 
-      if(rot_left()) 
-      {
-        if(central_dist > DISTANCE || central_dist == -1) current_state = MOVING;
-        else current_state = WAIT;
-      }
-      break;
-    case GIVING:
-      giving();
-
-      break;
-  }
-}
-
-//Выдача спаснабора и инициализация сервы
-void Robot::init_servo()
-{
-  myservo.attach(9);
-  myservo.write(91);
-}
-
-int Robot::giving()
-{
-  
 }
 
 //Обновление всех показаний с датчиков
@@ -231,7 +209,98 @@ void Robot::wait(int time_wait)
   while(millis() - timer_wait < time_wait);
 }
 
-//Работа с датчиками расстояния
+//Алгоритм правой ркуи для прохождения лабиринта
+void Robot::alg_right_hand() 
+{
+  if (right_dist > DISTANCE || right_dist == -1 || right_dist == 0) 
+  {
+    current_state = ROTATION_RIGHT;
+
+    if(left_dist > DISTANCE) graph.add_by_angle(map_angle, false);
+
+    map_angle = adduction(map_angle - 90);
+  } 
+  else if (central_dist > DISTANCE || central_dist == -1 || central_dist == 0) 
+  {
+    current_state = MOVING;
+
+    if(left_dist > DISTANCE) graph.add_by_angle(map_angle, false);
+  } 
+  else  
+  {
+    current_state = ROTATION_LEFT;
+    map_angle = adduction(map_angle + 90);
+  }
+
+  Serial.println(current_state);
+}
+
+//Алгоритм левой руки
+void Robot::alg_left_hand() 
+{
+  if (left_dist > DISTANCE || left_dist == -1 || left_dist == 0) 
+  {
+    current_state = ROTATION_LEFT;
+
+    if(right_dist > DISTANCE) graph.add_by_angle(map_angle, false);
+
+    map_angle = adduction(map_angle + 90);
+  } 
+  else if (central_dist > DISTANCE || central_dist == -1 || central_dist == 0) 
+  {
+    current_state = MOVING;
+
+    if(right_dist > DISTANCE) graph.add_by_angle(map_angle, false);
+  } 
+  else  
+  {
+    current_state = ROTATION_RIGHT;
+    map_angle = adduction(map_angle - 90);
+  }
+
+  Serial.println(current_state);
+}
+
+//Возврат к точке на карте где робот не был
+void Robot::return_to_point() 
+{
+  Serial.println("Lets goooo");
+  node point = graph.get_not_discovered();
+  Vec<enum moves> moves = graph.get_move(point, 0);
+
+  for (int i = 0; i < moves.size(); i++) 
+  {
+    switch(moves[i])
+    {
+      case ROTATE_RIGHT:
+        current_state = ROTATION_RIGHT;
+        break;
+      case ROTATE_LEFT:
+        current_state = ROTATION_LEFT;
+        break;
+      case MOVE_FORWARD:
+        current_state = MOVING;
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+//Инициализация сервы
+void Robot::init_servo()
+{
+  myservo.attach(SERVO_PIN);
+  myservo.write(91);
+}
+
+//Выдача спаснабора
+int Robot::giving()
+{
+  
+}
+
+//Инициализация датчиков расстояния
 void Robot::init_dis() 
 {
   pinMode(XSHUT_pin_r, OUTPUT);
@@ -282,6 +351,7 @@ void Robot::init_dis()
 #endif
 }
 
+//Функция для получения расстояния с датчиков
 int Robot::get_distance(VL53L0X sensor) 
 {
   if (sensor.timeoutOccurred()) Serial.print(" TIMEOUT");
@@ -295,46 +365,58 @@ int Robot::get_distance(VL53L0X sensor)
   return sensor_dis;
 }
 
-//Вывод отладчной информации
-void Robot::print_dis() 
+//Инициализация датчика цвета
+void Robot::init_color()
 {
-  Serial.print(" Right_R: ");
-  Serial.print(right_dist);
-  Serial.print(" Central_R: ");
-  Serial.print(central_dist);
-  Serial.print(" Left_R: ");
-  Serial.println(left_dist);
+  // сконфигурировать пины
+  pinMode(color_S0, 1);
+  pinMode(color_S1, 1);
+  pinMode(color_S2, 1);
+  pinMode(color_S3, 1);
+  pinMode(color_OUT, 0);
+
+  // масштабирование 20%
+  digitalWrite(color_S0, 1);
+  digitalWrite(color_S1, 0);
+}
+//Получение значения цвета на котором стоит робот
+color Robot::get_color()
+{
+  int R = 0;
+  int G = 0;
+  int B = 0;
+
+  // установить R фильтр
+  digitalWrite(color_S2,0);
+  digitalWrite(color_S3,0);
+
+  // Получение частоты на выходе
+  R = pulseIn(color_OUT, 0);
+
+  // установить G фильтр
+  digitalWrite(color_S2,1);
+  digitalWrite(color_S3,1);
+
+  // Получение частоты на выходе
+  G = pulseIn(color_OUT, 0);
+
+  // установить B фильтр
+  digitalWrite(color_S2,0);
+  digitalWrite(color_S3,1);
+
+  // Получение частоты на выходе
+  B = pulseIn(color_OUT, 0);
+
+  if(in_range(R, RED_BLUE, COLOR_SPREAD) && in_range(G, GREEN_BLUE, COLOR_SPREAD) && 
+     in_range(B, BLUE_BLUE, COLOR_SPREAD)) return BLUE;
+  
+  if(in_range(R, RED_BLACK, COLOR_SPREAD) && in_range(G, GREEN_BLACK, COLOR_SPREAD) && 
+     in_range(B, BLUE_BLACK, COLOR_SPREAD)) return BLACK;
+  
+  return WHITE;
 }
 
-void Robot::print_enc()
-{
-  Serial.print("countL: ");
-  Serial.print(countL);
-  Serial.print(" ");
-  Serial.print("countR: ");
-  Serial.println(countR);
-}
-
-void Robot::print_map()
-{
-  graph.print_graph();
-}
-
-void Robot::print_save()
-{
-  Serial.print("Side: ");
-  Serial.print(side);
-  Serial.print(" ");
-  Serial.print("Count: ");
-  Serial.println(count_save);
-}
-
-void Robot::print_gyro()
-{
-  mpu.print_roll_pitch_yaw();
-}
-
-//Работа с энкодерами
+//Инициализация энкодеров
 void Robot::init_encoder()
 {
   attachInterrupt(3, encL, RISING);
@@ -364,7 +446,7 @@ void Robot::handleEncR()
 
 Robot * Robot::instance_;
 
-//Работа с моторами
+//Подать значение на левый мотор
 void Robot::motor_l(int value) 
 { 
   int sign_v = sign(value);
@@ -391,6 +473,7 @@ void Robot::motor_l(int value)
   }
 }
 
+//Подать значение на правый мотор
 void Robot::motor_r(int value) 
 { 
   int sign_v = -1 * sign(value);
@@ -418,12 +501,14 @@ void Robot::motor_r(int value)
   }
 }
 
+//Подать значения на оба мотора (левый, правый)
 void Robot::motors(int value_l, int value_r) 
 {
   motor_l(value_l);
   motor_r(value_r);
 }
 
+//Остановить оба мотора
 void Robot::motor_stop() 
 {
   motor_l(0);

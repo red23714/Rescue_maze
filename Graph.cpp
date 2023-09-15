@@ -12,6 +12,7 @@ Graph::Graph(){
     current_node = 0;
 }
 
+//По исходному углу вычисляет с какими координатами нужно добавить вершину в граф
 void Graph::add_by_angle(int map_angle, bool discovered = true)
 {
   int x_local, y_local;
@@ -66,6 +67,7 @@ void Graph::add_by_angle(int map_angle, bool discovered = true)
   }
 }
 
+//Добавляет в граф вершину с заданными координатами и флагом, который показывает не является ли точка развилкой
 void Graph::add_node(int x, int y, bool is_current)
 {  
     int index;
@@ -106,12 +108,14 @@ void Graph::add_node(int x, int y, bool is_current)
     }
 }
 
+//Помечает соединения между вершинами графа в таблице смежности
 void Graph::make_connection(int n1, int n2)
 {
     graph_connection[n1][n2] = true;
     graph_connection[n2][n1] = true;
 }
 
+//По координатам двух вершин возвращает направление в котором находится вторая вершина
 enum direction Graph::get_move_dir(int x1, int y1, int x2, int y2, int angle)
 {
     int xs = x2 - x1;
@@ -134,6 +138,7 @@ enum direction Graph::get_move_dir(int x1, int y1, int x2, int y2, int angle)
     }
 }
 
+//Ограничивает значения исходного угла в диапозоне -360; 360
 int Graph::adduction(int angle)
 {
     if(angle > 180) angle -= 180;
@@ -142,6 +147,7 @@ int Graph::adduction(int angle)
     return angle;
 }
 
+//Создает набор движений, которые необходимо выполнить, чтобы добраться из текущий вершины в заданную
 Vec<enum moves> Graph::get_move(node to, int angle)
 {
     Vec<enum moves> moves;
@@ -190,6 +196,7 @@ Vec<enum moves> Graph::get_move(node to, int angle)
     return moves;
 }
 
+//Проверяет существует ли вершина и проезжал ли робот эту клетку
 bool Graph::is_discovered(int x, int y)
 {
     int number = get_node(x, y);
@@ -197,6 +204,7 @@ bool Graph::is_discovered(int x, int y)
     else return false;
 }
 
+//Алгоритм Деикстры, который находит кратчайший путь до заданной вершины
 Vec<node> Graph::find_path(node to)
 {
     int st = graph[current_node].number;
@@ -279,6 +287,8 @@ Vec<node> Graph::find_path(node to)
 //     return out;
 // }
 
+
+//Вывод графа в консоль
 int Graph::print_graph()
 {
     for (int i = 0; i < graph.size(); i++)
@@ -288,12 +298,14 @@ int Graph::print_graph()
     Serial.println("------------");
 }
 
+//Проверяет существует ли вершина
 bool Graph::get_node_exist(int x, int y)
 {
     if(get_node(x, y) != -1) return true;
     else return false;
 }
 
+//Возвращает вершину из графа по заданным координатам
 int Graph::get_node(int x, int y)
 {
 	// int c = 0;
@@ -323,6 +335,7 @@ int Graph::get_node(int x, int y)
     return -1;
 }
 
+//Находит ближайшую вершину, которая не была пройдена
 node Graph::get_not_discovered()
 {
     int x = graph[current_node].x, y = graph[current_node].y;
@@ -347,11 +360,13 @@ node Graph::get_not_discovered()
     return graph[index];
 }
 
+//Возращает граф в виде массива вершин
 Vec<node> Graph::get_graph()
 {
     return graph;
 }
 
+//Возвращает текущую вершину в которой мы находимся
 node Graph::get_current_node()
 {
     return graph[current_node];
