@@ -33,6 +33,8 @@ public:
     int rot_right();
     int rot_left();
 
+    void motors(int, int);
+
     void wait(int);
 private:
     Graph graph;
@@ -81,9 +83,10 @@ private:
     static void encR();
     void handleEncL();
     void handleEncR();
+    void getCountL();
+    void getCountR();
 
     void motor_l(int);
     void motor_r(int);
-    void motors(int, int);
     void motor_stop();
 };

@@ -8,7 +8,7 @@ void setup()
   Serial1.begin(9600);
   // Serial2.begin(9600);
 
-  robot.init(false, true, true, true, false, false);
+  robot.init(false, false, false, true, false, false);
 }
 
 void loop()
@@ -21,10 +21,8 @@ void loop()
   // {
   //   Serial.println(Serial2.read());
   // }
-
-  if(robot.mov_forward()) delay(1000);
   
   robot.wait(1);
 
-  // robot.state_machine();
+  robot.state_machine();
 }

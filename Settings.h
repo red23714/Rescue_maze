@@ -1,8 +1,8 @@
 //Порты моторов
 #define M1_1 7
 #define M1_2 9
-#define M2_1 13
-#define M2_2 10
+#define M2_1 13 //5
+#define M2_2 10 //4
 
 //Порт серво-мотора
 #define SERVO_PIN 11
