@@ -1,11 +1,11 @@
+#include "Arduino.h"
 #include "HardwareSerial.h"
 #include "Robot.h"
 
 // Инициализация всех датчиков с настройкой
 void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_servo, bool is_color)
 {
-  if (is_button)
-    pinMode(BUTTON_PIN, OUTPUT);
+  if (is_button) pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   if (is_mpu)
   {
@@ -28,8 +28,6 @@ void Robot::state_machine()
   {
   case WAIT:
     alg_right_hand();
-    motor_stop();
-    wait(1000);
     break;
   case MOVING:
     if (mov_forward()) current_state = WAIT;
@@ -49,8 +47,7 @@ void Robot::state_machine()
     }
     break;
   case GIVING:
-    giving();
-
+    giving(side, letter);
     break;
   }
 }
@@ -83,14 +80,14 @@ void Robot::print_map()
 }
 
 // Вывод с какой стороны обнаружен спаснабор и кол-во, которое нужно выдать
-void Robot::print_save()
-{
-  Serial.print("Side: ");
-  Serial.print(side);
-  Serial.print(" ");
-  Serial.print("Count: ");
-  Serial.println(count_save);
-}
+// void Robot::print_save()
+// {
+//   Serial.print("Side: ");
+//   Serial.print(side);
+//   Serial.print(" ");
+//   Serial.print("Count: ");
+//   Serial.println(count_save);
+// }
 
 // Вывод показания гироскопа
 void Robot::print_gyro()
@@ -115,7 +112,7 @@ bool Robot::mov_forward()
 
   u = err * K_WALL;
 
-  if (central_dist < DISTANCE_WALL && central_dist != -1 && central_dist != 0) is_stop_moving = true;
+  if (central_dist < DISTANCE_WALL_CENTER && central_dist != -1 && central_dist != 0) is_stop_moving = true;
   else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
 
   motors(SPEED + u, SPEED - u);
@@ -198,13 +195,14 @@ void Robot::wait(int time_wait)
 
     if (Serial1.available())
     {
-      side = 1;
-      count_save = Serial1.read();
-    }
-    if (Serial2.available())
-    {
-      side = 2;
-      count_save = Serial2.read();
+      int n = Serial1.read();
+      if(n != 48) 
+      {
+        current_state = GIVING;
+        side = 1;
+        letter = n;
+        Serial.println(n);
+      }
     }
 
     mpu.update();
@@ -293,38 +291,57 @@ void Robot::return_to_point()
 void Robot::init_servo()
 {
   myservo.attach(SERVO_PIN);
-  myservo.write(91);
+  myservo.write(START_POS_SERVO);
 }
 
 // Выдача спаснабора
-int Robot::giving()
+int Robot::giving(int side_in, int count_save)
 {
-  if (side == 1)
+  int l = 0;
+  switch(count_save)
   {
-    for (int i = 91; i < 180; i++)
-    {
-      myservo.write(i);
-      delay(1);
-    }
+    case 83:
+      l = 2; // S
+      break;
 
-    for (int i = 180; i < 91; i--)
-    {
-      myservo.write(i);
-      delay(1);
-    }
+    case 72:
+      l = 1; // H
+      break;
+
+    case 85:
+      l = 0; // U
+      break;
+    
   }
-  else if (side == 2)
+  for(int n = 0; n < l; n++)
   {
-    for (int i = 91; i < 0; i--)
+    if (side_in == 1)
     {
-      myservo.write(i);
-      delay(1);
-    }
+      for (int i = START_POS_SERVO; i < 180; i++)
+      {
+        myservo.write(i);
+        delay(15);
+      }
 
-    for (int i = 0; i < 91; i++)
+      for (int i = 180; i > START_POS_SERVO; i--)
+      {
+        myservo.write(i);
+        delay(15);
+      }
+    }
+    else if (side_in == 2)
     {
-      myservo.write(i);
-      delay(1);
+      for (int i = START_POS_SERVO; i > 0; i--)
+      {
+        myservo.write(i);
+        delay(15);
+      }
+
+      for (int i = 0; i < START_POS_SERVO; i++)
+      {
+        myservo.write(i);
+        delay(15);
+      }
     }
   }
 }

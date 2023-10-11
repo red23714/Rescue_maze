@@ -1,8 +1,8 @@
 //Порты моторов
 #define M1_1 7
 #define M1_2 9
-#define M2_1 13 //5
-#define M2_2 10 //4
+#define M2_1 5 // 13
+#define M2_2 4 // 10
 
 //Порт серво-мотора
 #define SERVO_PIN 11
@@ -13,18 +13,21 @@
 #define sensor_l_newAddress 44
 
 //Порт кнопки
-#define BUTTON_PIN 31
+#define BUTTON_PIN 32
 
 //Порты XSHUT для датчиков расстояния
 #define XSHUT_pin_r 22
 #define XSHUT_pin_u 25
 #define XSHUT_pin_l 23
 
+#define START_POS_SERVO 80
+
 //Флаг который позволяет датчикам расстояния видеть большее расстояния, уменьшается точность
 // #define LONG_RANGE
 
 //Расстояние, которое должно быть между боковым датчиком расстояния и стеной 120
-#define DISTANCE_WALL 120
+#define DISTANCE_WALL 120 // 120
+#define DISTANCE_WALL_CENTER 80 // 90
 //Расстояние для проверки находиться ли сбоку стена 170
 #define DISTANCE 170
 
@@ -50,7 +53,7 @@
 #define SPEED 100
 
 //Кол-во оборотов, которое нужно совершить мотору, чтобы проехать одну ячейку
-#define CELL_SIZE_ENCODER 1700
+#define CELL_SIZE_ENCODER 2600 // 1700
 
 //Коэффициент резкости поворота при езде вдоль стены 1.5
 #define K_WALL 1.5

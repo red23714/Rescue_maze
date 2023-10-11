@@ -1,3 +1,4 @@
+#include "HardwareSerial.h"
 #include "Gyro_sens.h"
 
 void Gyro_sens::init_gyro()
@@ -116,12 +117,13 @@ void Gyro_sens::gyro_calibration(int port)
     }
     else
     {
-        while(!digitalRead(port)) //!digitalRead(31)
+        while(digitalRead(port)) //!digitalRead(31)
         {
             update();
             Serial.println(yaw());
             delay(1);
         }
+        Serial.println("Hello world");
     }
     
     while (!update());

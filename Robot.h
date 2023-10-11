@@ -35,6 +35,8 @@ public:
 
     void motors(int, int);
 
+    int giving(int, int); 
+
     void wait(int);
 private:
     Graph graph;
@@ -53,6 +55,9 @@ private:
     int map_angle = 0;
     bool is_return_to = false;
 
+    int side = 0;
+    int letter = 0;
+
     int right_dist = 0;
     int left_dist = 0;
     int central_dist = 0;
@@ -62,15 +67,11 @@ private:
     int countL = 0;
     int countR = 0;
 
-    int side = 0;
-    int count_save = 0;
-
     void alg_right_hand();
     void alg_left_hand();
     void return_to_point();
 
     void init_servo();
-    int giving(); 
 
     void init_dis();
     int get_distance(VL53L0X); 

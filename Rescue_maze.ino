@@ -5,10 +5,10 @@ Robot robot;
 void setup()
 {  
   Serial.begin(115200);
-  Serial1.begin(9600);
+  Serial1.begin(115200);
   // Serial2.begin(9600);
 
-  robot.init(false, false, false, true, false, false);
+  robot.init(true, true, true, true, true, false);
 }
 
 void loop()
