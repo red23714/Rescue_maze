@@ -6,7 +6,7 @@
 
 #include "Graph.h"
 #include "Gyro_sens.h"
-#include "Camera.h"
+// #include "Camera.h"
 
 #include "States.h"
 #include "Colors.h"

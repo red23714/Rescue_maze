@@ -82,14 +82,14 @@ void Robot::print_map()
 }
 
 // Вывод с какой стороны обнаружен спаснабор и кол-во, которое нужно выдать
-// void Robot::print_save()
-// {
-//   Serial.print("Side: ");
-//   Serial.print(side);
-//   Serial.print(" ");
-//   Serial.print("Count: ");
-//   Serial.println(count_save);
-// }
+void Robot::print_save()
+{
+  Serial.print("Side: ");
+  Serial.print(side);
+  Serial.print(" ");
+  Serial.print("Letter: ");
+  Serial.println(letter);
+}
 
 // Вывод показания гироскопа
 void Robot::print_gyro()
