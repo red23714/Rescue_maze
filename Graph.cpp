@@ -371,3 +371,8 @@ node Graph::get_current_node()
 {
     return graph[current_node];
 }
+
+int Graph::get_graph_length()
+{
+    return graph.size();
+}

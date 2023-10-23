@@ -27,7 +27,8 @@ void Robot::state_machine()
   switch (current_state)
   {
   case WAIT:
-    alg_right_hand();
+    if(is_giving) current_state = GIVING;
+    else alg_right_hand();
     break;
   case MOVING:
     if (mov_forward()) current_state = WAIT;
@@ -35,18 +36,19 @@ void Robot::state_machine()
   case ROTATION_RIGHT:
     if (rot_right())
     {
-      if (central_dist > DISTANCE || central_dist == -1) current_state = MOVING;
+      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving) current_state = MOVING;
       else current_state = WAIT;
     }
     break;
   case ROTATION_LEFT:
     if (rot_left())
     {
-      if (central_dist > DISTANCE || central_dist == -1) current_state = MOVING;
+      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving) current_state = MOVING;
       else current_state = WAIT;
     }
     break;
   case GIVING:
+    motor_stop();
     giving(side, letter);
     break;
   }
@@ -187,23 +189,37 @@ void Robot::wait(int time_wait)
 {
   float timer_wait = millis();
 
+  bool is_color = false;
+
   do
   {
     right_dist = get_distance(sensor_r);
     central_dist = get_distance(sensor_u);
     left_dist = get_distance(sensor_l);
 
-    if (Serial1.available())
+    color color_floor = get_color();
+
+    if (Serial1.available() && !is_giving)
     {
       int n = Serial1.read();
-      if(n != 48) 
+      if(n != 48 && graph_length_old != graph.get_graph_length() && map_angle_old != map_angle) 
       {
-        current_state = GIVING;
+        old_state = current_state;
         side = 1;
         letter = n;
+        graph_length_old = graph.get_graph_length();
+        map_angle_old = map_angle;
         Serial.println(n);
+        is_giving = true;
       }
     }
+
+    if(color_floor == BLUE) 
+    {
+      time_wait = 5000 - time_wait;
+      is_color = true;
+    }
+    else if (color_floor == BLACK) return_to_point();
 
     mpu.update();
   } while (millis() - timer_wait < time_wait);
@@ -344,6 +360,8 @@ int Robot::giving(int side_in, int count_save)
       }
     }
   }
+  current_state = old_state;
+  is_giving = false;
 }
 
 // Инициализация датчиков расстояния

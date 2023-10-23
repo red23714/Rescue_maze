@@ -1,11 +1,12 @@
 #pragma once
 
-#include <Arduino.h>
+#include "Arduino.h"
 #include <VL53L0X.h>
 #include <Servo.h>
 
 #include "Graph.h"
 #include "Gyro_sens.h"
+#include "Camera.h"
 
 #include "States.h"
 #include "Colors.h"
@@ -52,11 +53,15 @@ private:
     Servo myservo;
 
     state current_state = WAIT;
+    state old_state = WAIT;
     int map_angle = 0;
+    int map_angle_old = 0;
+    int graph_length_old = 0;
     bool is_return_to = false;
 
     int side = 0;
     int letter = 0;
+    bool is_giving = false;
 
     int right_dist = 0;
     int left_dist = 0;

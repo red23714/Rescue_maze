@@ -21,6 +21,7 @@ public:
     bool get_node_exist(int, int);
     Vec<node> get_graph();
     node get_current_node();
+    int get_graph_length();
 
     int print_graph();
 
