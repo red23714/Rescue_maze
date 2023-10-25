@@ -5,16 +5,15 @@ Robot robot;
 void setup()
 {  
   Serial.begin(115200);
-  Serial1.begin(115200);
-  // Serial2.begin(9600);
 
-  robot.init(true, true, true, true, true, false);
+  robot.init(true, true, true, true, true, true);
 }
 
 void loop()
 {
-  // robot.print_dis();
-  // robot.print_gyro();
+  robot.print_dis();
+  robot.print_gyro();
+  robot.print_save();
   // robot.print_enc();
 
   // if(Serial2.available())
@@ -22,7 +21,7 @@ void loop()
   //   Serial.println(Serial2.read());
   // }
   
-  robot.wait(1);
+  // robot.wait(1);
 
-  robot.state_machine();
+  // robot.state_machine();
 }

@@ -7,17 +7,18 @@ void Gyro_sens::init_gyro()
     delay(2000);
 
     if (!setup(sensor_gyro_newAdress)) // change to your own address
-    {  
-        while (1) 
+    {
+        while (1)
         {
-        Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
-        delay(5000);
+            Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
+            delay(5000);
         }
     }
-    else Serial.println("MPU work");
+    else
+        Serial.println("MPU work");
 
     selectFilter(QuatFilterSel::MADGWICK_WITHOUT_MAG);
-    //setFilterIterations(10);
+    // setFilterIterations(10);
 
     // calibrate anytime you want to
     verbose(true);
@@ -29,8 +30,10 @@ void Gyro_sens::init_gyro()
 
 float Gyro_sens::adduction(float angle)
 {
-    while(angle > 180) angle -= 360;
-    while(angle < -180) angle += 360;
+    while (angle > 180)
+        angle -= 360;
+    while (angle < -180)
+        angle += 360;
 
     return angle;
 }
@@ -59,18 +62,40 @@ float Gyro_sens::yaw()
     return angle;
 }
 
-void Gyro_sens::print_roll_pitch_yaw() 
+void Gyro_sens::update()
+{
+    yaw_angle = yaw();
+    pitch_angle = pitch();
+    roll_angle = roll();
+}
+
+int Gyro_sens::get_yaw()
+{
+    return yaw_angle;
+}
+
+int Gyro_sens::get_pitch()
+{
+    return pitch_angle;
+}
+
+int Gyro_sens::get_roll()
+{
+    return pitch_angle;
+}
+
+void Gyro_sens::print_roll_pitch_yaw()
 {
     Serial.print("Angles: ");
-    Serial.print(getYaw());
+    Serial.print(yaw_angle);
     Serial.print(" ");
-    Serial.print(getPitch());
+    Serial.print(pitch_angle);
     Serial.print(" ");
-    Serial.println(getRoll());
+    Serial.println(roll_angle);
     delay(10);
 }
 
-void Gyro_sens::print_calibration() 
+void Gyro_sens::print_calibration()
 {
     Serial.println("< calibration parameters >");
     Serial.println("accel bias [g]: ");
@@ -105,31 +130,30 @@ void Gyro_sens::print_calibration()
 
 void Gyro_sens::gyro_calibration(int port)
 {
-    if(port == -1) 
+    if (port == -1)
     {
         float timer_wait = millis();
-        while(millis() - timer_wait < 5000)
+        while (millis() - timer_wait < 5000)
         {
-            update();
+            MPU9250::update();
             Serial.println(yaw());
             delay(1);
         }
     }
     else
     {
-        while(digitalRead(port)) //!digitalRead(31)
+        while (digitalRead(port)) //! digitalRead(31)
         {
-            update();
+            MPU9250::update();
             Serial.println(yaw());
             delay(1);
         }
-        Serial.println("Hello world");
+        Serial.println("Start program");
     }
-    
-    while (!update());
+
+    while (!MPU9250::update());
 
     roll_first = roll();
     pitch_first = pitch();
     yaw_first = yaw();
 }
-

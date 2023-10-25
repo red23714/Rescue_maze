@@ -39,13 +39,13 @@
 #define color_OUT 8
 
 //Значения RGB для синего
-#define RED_BLUE 0
-#define GREEN_BLUE 0
-#define BLUE_BLUE 0
+#define RED_BLUE 1000
+#define GREEN_BLUE 1000
+#define BLUE_BLUE 1000
 //Значения RGB для черного
-#define RED_BLACK 0
-#define GREEN_BLACK 0
-#define BLUE_BLACK 0
+#define RED_BLACK 1000
+#define GREEN_BLACK 1000
+#define BLUE_BLACK 1000
 //Погрешность при котором идеальные значения могут не совпадать с реальными параметрами цвета
 #define COLOR_SPREAD 20
 

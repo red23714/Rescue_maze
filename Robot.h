@@ -6,19 +6,22 @@
 
 #include "Graph.h"
 #include "Gyro_sens.h"
-// #include "Camera.h"
+#include "Camera.h"
+#include "Dalnometer.h"
+#include "Updatable.h"
 
 #include "States.h"
 #include "Colors.h"
+#include "Letters.h"
 #include "Utils.h"
 #include "Settings.h"
 
 #define DEBUG 0
 
 class Robot
-{  
+{
 public:
-    void init(bool is_button = true, bool is_mpu = true, bool is_dis = true, 
+    void init(bool is_button = true, bool is_mpu = true, bool is_dis = true,
               bool is_enc = true, bool is_servo = true, bool is_color = true);
 
     void state_machine();
@@ -36,21 +39,26 @@ public:
 
     void motors(int, int);
 
-    int giving(int, int); 
+    int giving(int, int);
 
     void wait(int);
+
 private:
     Graph graph;
 
-    static Robot * instance_;
+    static Robot *instance_;
 
-    VL53L0X sensor_r;
-    VL53L0X sensor_u;
-    VL53L0X sensor_l;
+    Dalnometer sensor_r = Dalnometer(XSHUT_pin_r, sensor_r_newAddress);
+    Dalnometer sensor_u = Dalnometer(XSHUT_pin_u, sensor_u_newAddress);
+    Dalnometer sensor_l = Dalnometer(XSHUT_pin_l, sensor_l_newAddress);
 
     Gyro_sens mpu;
 
+    Camera camera_l = Camera(&Serial1, 1);
+
     Servo myservo;
+
+    Updatable * periph[5] = {&sensor_r, &sensor_u, &sensor_l, &mpu, &camera_l};
 
     state current_state = WAIT;
     state old_state = WAIT;
@@ -59,8 +67,6 @@ private:
     int graph_length_old = 0;
     bool is_return_to = false;
 
-    int side = 0;
-    int letter = 0;
     bool is_giving = false;
 
     int right_dist = 0;
@@ -78,9 +84,6 @@ private:
 
     void init_servo();
 
-    void init_dis();
-    int get_distance(VL53L0X); 
-
     void init_color();
     color get_color();
 
@@ -89,8 +92,6 @@ private:
     static void encR();
     void handleEncL();
     void handleEncR();
-    void getCountL();
-    void getCountR();
 
     void motor_l(int);
     void motor_r(int);

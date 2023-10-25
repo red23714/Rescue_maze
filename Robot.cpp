@@ -5,6 +5,8 @@
 // Инициализация всех датчиков с настройкой
 void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_servo, bool is_color)
 {
+  motors(0, 0);
+
   if (is_button) pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   if (is_mpu)
@@ -14,7 +16,12 @@ void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_
     else mpu.gyro_calibration(-1);
   }
 
-  if (is_dis) init_dis();
+  if (is_dis) 
+  {
+    sensor_r.init_dis();
+    sensor_u.init_dis();
+    sensor_l.init_dis();
+  }
   if (is_enc) init_encoder();
   if (is_servo) init_servo();
   if (is_color) init_color();
@@ -23,7 +30,7 @@ void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_
 // Машина состояний, где переключаются текущие действия робота
 void Robot::state_machine()
 {
-  // Serial.println(current_state);
+  Serial.println(current_state);
   switch (current_state)
   {
   case WAIT:
@@ -49,7 +56,7 @@ void Robot::state_machine()
     break;
   case GIVING:
     motor_stop();
-    giving(side, letter);
+    giving(camera_l.get_side(), camera_l.get_letter());
     break;
   }
 }
@@ -85,10 +92,10 @@ void Robot::print_map()
 void Robot::print_save()
 {
   Serial.print("Side: ");
-  Serial.print(side);
+  Serial.print(camera_l.get_side());
   Serial.print(" ");
   Serial.print("Letter: ");
-  Serial.println(letter);
+  Serial.println(camera_l.get_letter());
 }
 
 // Вывод показания гироскопа
@@ -139,13 +146,13 @@ bool Robot::rotate(float angle)
   if (flag)
   {
     mpu.yaw_first = 0;
-    mpu.yaw_first = mpu.yaw();
+    mpu.yaw_first = mpu.get_yaw();
     flag = false;
   }
 
   delta = millis() - timer_i;
 
-  err = adduction(angle - mpu.yaw());
+  err = adduction(angle - mpu.get_yaw());
 
   i += err * delta;
   if (abs(i) > 10) i = 10 * sign(i);
@@ -193,23 +200,26 @@ void Robot::wait(int time_wait)
 
   do
   {
-    right_dist = get_distance(sensor_r);
-    central_dist = get_distance(sensor_u);
-    left_dist = get_distance(sensor_l);
+    for (int i = 0; i < sizeof(periph) / sizeof(periph[0]); i++)
+    {
+      periph[i]->update();
+    }
+    
+    right_dist = sensor_r.get_sensor_dis();
+    central_dist = sensor_u.get_sensor_dis();
+    left_dist = sensor_l.get_sensor_dis();
 
     color color_floor = get_color();
 
-    if (Serial1.available() && !is_giving)
+    if (!is_giving)
     {
-      int n = Serial1.read();
-      if(n != 48 && graph_length_old != graph.get_graph_length() && map_angle_old != map_angle) 
+      letter l = camera_l.get_letter();
+      if(l != letter::N && graph_length_old != graph.get_graph_length() && map_angle_old != map_angle) 
       {
         old_state = current_state;
-        side = 1;
-        letter = n;
         graph_length_old = graph.get_graph_length();
         map_angle_old = map_angle;
-        Serial.println(n);
+        Serial.println(l);
         is_giving = true;
       }
     }
@@ -219,9 +229,8 @@ void Robot::wait(int time_wait)
       time_wait = 5000 - time_wait;
       is_color = true;
     }
-    else if (color_floor == BLACK) return_to_point();
+    else if (color_floor == BLACK) break;//return_to_point();
 
-    mpu.update();
   } while (millis() - timer_wait < time_wait);
 }
 
@@ -362,71 +371,6 @@ int Robot::giving(int side_in, int count_save)
   }
   current_state = old_state;
   is_giving = false;
-}
-
-// Инициализация датчиков расстояния
-void Robot::init_dis()
-{
-  pinMode(XSHUT_pin_r, OUTPUT);
-  pinMode(XSHUT_pin_u, OUTPUT);
-  pinMode(XSHUT_pin_l, OUTPUT);
-
-  digitalWrite(XSHUT_pin_r, 0);
-  digitalWrite(XSHUT_pin_u, 0);
-  digitalWrite(XSHUT_pin_l, 0);
-
-  Wire.begin();
-  delay(500);
-
-  digitalWrite(XSHUT_pin_r, 1);
-  delay(100);
-  sensor_r.setAddress(sensor_r_newAddress);
-  delay(10);
-
-  digitalWrite(XSHUT_pin_u, 1);
-  delay(100);
-  sensor_u.setAddress(sensor_u_newAddress);
-  delay(10);
-
-  digitalWrite(XSHUT_pin_l, 1);
-  delay(100);
-  sensor_l.setAddress(sensor_l_newAddress);
-  delay(10);
-
-  sensor_r.init();
-  sensor_u.init();
-  sensor_l.init();
-
-  delay(2000);
-
-  sensor_r.setTimeout(500);
-  sensor_u.setTimeout(500);
-  sensor_l.setTimeout(500);
-
-  sensor_r.startContinuous();
-  sensor_u.startContinuous();
-  sensor_l.startContinuous();
-
-#if defined LONG_RANGE
-  // lower the return signal rate limit (default is 0.25 MCPS)
-  sensor_r.setSignalRateLimit(0.1);
-  sensor_u.setSignalRateLimit(0.1);
-  sensor_l.setSignalRateLimit(0.1);
-#endif
-}
-
-// Функция для получения расстояния с датчиков
-int Robot::get_distance(VL53L0X sensor)
-{
-  if (sensor.timeoutOccurred()) Serial.print(" TIMEOUT");
-  int sensor_dis = sensor.readRangeContinuousMillimeters(); //-50
-
-  if (sensor_dis == 8191) return -1;
-
-  if (sensor_dis == 8190) sensor_dis = sensor.sensor_dis_old;
-  else sensor.sensor_dis_old = sensor_dis;
-
-  return sensor_dis;
 }
 
 // Инициализация датчика цвета
