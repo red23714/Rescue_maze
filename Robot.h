@@ -31,6 +31,7 @@ public:
     void print_map();
     void print_save();
     void print_gyro();
+    void print_color();
 
     bool mov_forward();
     bool rotate(float);

@@ -14,7 +14,6 @@ public:
   Gyro_sens() {
 
   };
-  int roll_first = 0, pitch_first = 0, yaw_first = 0;
 
   void init_gyro();
 
@@ -33,10 +32,18 @@ public:
   int get_pitch();
   int get_roll();
 
+  void set_yaw_first(int value);
+  void set_pitch_first(int value);
+  void set_roll_first(int value);
+
 private:
   float adduction(float);
 
   int roll_angle = 0;
   int yaw_angle = 0;
   int pitch_angle = 0;
+
+  int roll_first = 0;
+  int pitch_first = 0;
+  int yaw_first = 0;
 };

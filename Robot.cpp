@@ -5,53 +5,63 @@
 // Инициализация всех датчиков с настройкой
 void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_servo, bool is_color)
 {
-  motors(0, 0);
-
-  if (is_button) pinMode(BUTTON_PIN, INPUT_PULLUP);
+  if (is_button)
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   if (is_mpu)
   {
     mpu.init_gyro();
-    if (is_button) mpu.gyro_calibration(BUTTON_PIN);
-    else mpu.gyro_calibration(-1);
+    if (is_button)
+      mpu.gyro_calibration(BUTTON_PIN);
+    else
+      mpu.gyro_calibration(-1);
   }
 
-  if (is_dis) 
+  if (is_dis)
   {
     sensor_r.init_dis();
     sensor_u.init_dis();
     sensor_l.init_dis();
   }
-  if (is_enc) init_encoder();
-  if (is_servo) init_servo();
-  if (is_color) init_color();
+  if (is_enc)
+    init_encoder();
+  if (is_servo)
+    init_servo();
+  if (is_color)
+    init_color();
 }
 
 // Машина состояний, где переключаются текущие действия робота
 void Robot::state_machine()
 {
-  Serial.println(current_state);
   switch (current_state)
   {
   case WAIT:
-    if(is_giving) current_state = GIVING;
-    else alg_right_hand();
+    if (is_giving)
+      current_state = GIVING;
+    else
+      alg_right_hand();
     break;
   case MOVING:
-    if (mov_forward()) current_state = WAIT;
+    if (mov_forward())
+      current_state = WAIT;
     break;
   case ROTATION_RIGHT:
     if (rot_right())
     {
-      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving) current_state = MOVING;
-      else current_state = WAIT;
+      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving)
+        current_state = MOVING;
+      else
+        current_state = WAIT;
     }
     break;
   case ROTATION_LEFT:
     if (rot_left())
     {
-      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving) current_state = MOVING;
-      else current_state = WAIT;
+      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving)
+        current_state = MOVING;
+      else
+        current_state = WAIT;
     }
     break;
   case GIVING:
@@ -61,7 +71,7 @@ void Robot::state_machine()
   }
 }
 
-// Вывод показания датчиков расстояния
+// Вывод показаний датчиков расстояния
 void Robot::print_dis()
 {
   Serial.print(" Right_R: ");
@@ -72,7 +82,7 @@ void Robot::print_dis()
   Serial.println(left_dist);
 }
 
-// Вывод показания энкодеров
+// Вывод показаний энкодеров
 void Robot::print_enc()
 {
   Serial.print("countL: ");
@@ -91,17 +101,42 @@ void Robot::print_map()
 // Вывод с какой стороны обнаружен спаснабор и кол-во, которое нужно выдать
 void Robot::print_save()
 {
-  Serial.print("Side: ");
-  Serial.print(camera_l.get_side());
-  Serial.print(" ");
-  Serial.print("Letter: ");
-  Serial.println(camera_l.get_letter());
+  camera_l.print_camera();
 }
 
-// Вывод показания гироскопа
+// Вывод показаний гироскопа
 void Robot::print_gyro()
 {
   mpu.print_roll_pitch_yaw();
+}
+
+// Вывод показаний датчика цвета
+void Robot::print_color()
+{
+  color c = get_color();
+  Serial.print("Color: ");
+  switch (c)
+  {
+  case color::WHITE:
+    Serial.println("White");
+    break;
+
+  case color::BLUE:
+    Serial.println("Blue");
+    break;
+
+  case color::BLACK:
+    Serial.println("Black");
+    break;
+
+  case color::SILVER:
+    Serial.println("Silver");
+    break;
+
+  default:
+    Serial.println("Color sens error");
+    break;
+  }
 }
 
 // Движение вперед с выравниванием по боковым датчикам
@@ -114,15 +149,19 @@ bool Robot::mov_forward()
   right_err = DISTANCE_WALL - right_dist;
   left_err = DISTANCE_WALL - left_dist;
 
-  if (right_dist > DISTANCE) right_err = 0;
-  if (left_dist > DISTANCE) left_err = 0;
+  if (right_dist > DISTANCE)
+    right_err = 0;
+  if (left_dist > DISTANCE)
+    left_err = 0;
 
   err = left_err - right_err;
 
   u = err * K_WALL;
 
-  if (central_dist < DISTANCE_WALL_CENTER && central_dist != -1 && central_dist != 0) is_stop_moving = true;
-  else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
+  if (central_dist < DISTANCE_WALL_CENTER && central_dist != -1 && central_dist != 0)
+    is_stop_moving = true;
+  else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER)
+    is_stop_moving = true;
 
   motors(SPEED + u, SPEED - u);
 
@@ -130,6 +169,7 @@ bool Robot::mov_forward()
   {
     countL = 0;
     countR = 0;
+    delay(1000);
     graph.add_by_angle(map_angle);
   }
 
@@ -145,8 +185,8 @@ bool Robot::rotate(float angle)
 
   if (flag)
   {
-    mpu.yaw_first = 0;
-    mpu.yaw_first = mpu.get_yaw();
+    // mpu.set_yaw_first(0);
+    mpu.set_yaw_first(mpu.get_yaw());
     flag = false;
   }
 
@@ -173,6 +213,7 @@ bool Robot::rotate(float angle)
   {
     countL = 0;
     countR = 0;
+    delay(1000);
     flag = true;
   }
 
@@ -204,7 +245,7 @@ void Robot::wait(int time_wait)
     {
       periph[i]->update();
     }
-    
+
     right_dist = sensor_r.get_sensor_dis();
     central_dist = sensor_u.get_sensor_dis();
     left_dist = sensor_l.get_sensor_dis();
@@ -214,22 +255,24 @@ void Robot::wait(int time_wait)
     if (!is_giving)
     {
       letter l = camera_l.get_letter();
-      if(l != letter::N && graph_length_old != graph.get_graph_length() && map_angle_old != map_angle) 
+      if (l != 48 && graph_length_old != graph.get_graph_length() && map_angle_old != map_angle)
       {
         old_state = current_state;
         graph_length_old = graph.get_graph_length();
         map_angle_old = map_angle;
         Serial.println(l);
         is_giving = true;
+        camera_l.set_is_update(false);
       }
     }
 
-    if(color_floor == BLUE) 
+    if (color_floor == BLUE)
     {
       time_wait = 5000 - time_wait;
       is_color = true;
     }
-    else if (color_floor == BLACK) break;//return_to_point();
+    else if (color_floor == BLACK)
+      break; // return_to_point();
 
   } while (millis() - timer_wait < time_wait);
 }
@@ -241,7 +284,8 @@ void Robot::alg_right_hand()
   {
     current_state = ROTATION_RIGHT;
 
-    if (left_dist > DISTANCE) graph.add_by_angle(map_angle, false);
+    if (left_dist > DISTANCE)
+      graph.add_by_angle(map_angle, false);
 
     map_angle = adduction(map_angle - 90);
   }
@@ -249,15 +293,14 @@ void Robot::alg_right_hand()
   {
     current_state = MOVING;
 
-    if (left_dist > DISTANCE) graph.add_by_angle(map_angle, false);
+    if (left_dist > DISTANCE)
+      graph.add_by_angle(map_angle, false);
   }
   else
   {
     current_state = ROTATION_LEFT;
     map_angle = adduction(map_angle + 90);
   }
-
-  Serial.println(current_state);
 }
 
 // Алгоритм левой руки
@@ -267,7 +310,8 @@ void Robot::alg_left_hand()
   {
     current_state = ROTATION_LEFT;
 
-    if (right_dist > DISTANCE) graph.add_by_angle(map_angle, false);
+    if (right_dist > DISTANCE)
+      graph.add_by_angle(map_angle, false);
 
     map_angle = adduction(map_angle + 90);
   }
@@ -275,15 +319,14 @@ void Robot::alg_left_hand()
   {
     current_state = MOVING;
 
-    if (right_dist > DISTANCE) graph.add_by_angle(map_angle, false);
+    if (right_dist > DISTANCE)
+      graph.add_by_angle(map_angle, false);
   }
   else
   {
     current_state = ROTATION_RIGHT;
     map_angle = adduction(map_angle - 90);
   }
-
-  Serial.println(current_state);
 }
 
 // Возврат к точке на карте где робот не был
@@ -323,22 +366,22 @@ void Robot::init_servo()
 int Robot::giving(int side_in, int count_save)
 {
   int l = 0;
-  switch(count_save)
+  switch (count_save)
   {
-    case 83:
-      l = 2; // S
-      break;
+  case 83:
+    l = 2; // S
+    break;
 
-    case 72:
-      l = 1; // H
-      break;
+  case 72:
+    l = 1; // H
+    break;
 
-    case 85:
-      l = 0; // U
-      break;
-    
+  case 85:
+    l = 0; // U
+    break;
   }
-  for(int n = 0; n < l; n++)
+
+  for (int n = 0; n < l; n++)
   {
     if (side_in == 1)
     {
@@ -371,6 +414,7 @@ int Robot::giving(int side_in, int count_save)
   }
   current_state = old_state;
   is_giving = false;
+  camera_l.set_is_update(true);
 }
 
 // Инициализация датчика цвета
@@ -416,10 +460,16 @@ color Robot::get_color()
   B = pulseIn(color_OUT, 0);
 
   if (in_range(R, RED_BLUE, COLOR_SPREAD) && in_range(G, GREEN_BLUE, COLOR_SPREAD) &&
-      in_range(B, BLUE_BLUE, COLOR_SPREAD)) return BLUE;
+      in_range(B, BLUE_BLUE, COLOR_SPREAD))
+    return BLUE;
 
   if (in_range(R, RED_BLACK, COLOR_SPREAD) && in_range(G, GREEN_BLACK, COLOR_SPREAD) &&
-      in_range(B, BLUE_BLACK, COLOR_SPREAD)) return BLACK;
+      in_range(B, BLUE_BLACK, COLOR_SPREAD))
+    return BLACK;
+
+  if (in_range(R, RED_SILVER, COLOR_SPREAD) && in_range(G, GREEN_SILVER, COLOR_SPREAD) &&
+      in_range(B, BLUE_SILVER, COLOR_SPREAD))
+    return SILVER;
 
   return WHITE;
 }
@@ -458,7 +508,8 @@ Robot *Robot::instance_;
 void Robot::motor_l(int value)
 {
   int sign_v = sign(value);
-  if (abs(value) > 255) value = 255 * sign_v;
+  if (abs(value) > 255)
+    value = 255 * sign_v;
   value = sign_v * (255 - abs(value));
 
   if (value == 0 && sign_v == 0)
@@ -485,7 +536,8 @@ void Robot::motor_l(int value)
 void Robot::motor_r(int value)
 {
   int sign_v = -1 * sign(value);
-  if (abs(value) > 255) value = 255 * sign_v;
+  if (abs(value) > 255)
+    value = 255 * sign_v;
 
   value = sign_v * (255 - abs(value));
 

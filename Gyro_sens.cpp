@@ -64,6 +64,8 @@ float Gyro_sens::yaw()
 
 void Gyro_sens::update()
 {
+    MPU9250::update();
+
     yaw_angle = yaw();
     pitch_angle = pitch();
     roll_angle = roll();
@@ -84,15 +86,29 @@ int Gyro_sens::get_roll()
     return pitch_angle;
 }
 
+void Gyro_sens::set_yaw_first(int value)
+{
+    yaw_first = adduction(value);
+}
+
+void Gyro_sens::set_pitch_first(int value)
+{
+    pitch_first = adduction(value);
+}
+
+void Gyro_sens::set_roll_first(int value)
+{
+    _first = adduction(value);
+}
+
 void Gyro_sens::print_roll_pitch_yaw()
 {
-    Serial.print("Angles: ");
+    Serial.print("Yaw: ");
     Serial.print(yaw_angle);
-    Serial.print(" ");
+    Serial.print(" Pitch:");
     Serial.print(pitch_angle);
-    Serial.print(" ");
+    Serial.print(" Roll:");
     Serial.println(roll_angle);
-    delay(10);
 }
 
 void Gyro_sens::print_calibration()

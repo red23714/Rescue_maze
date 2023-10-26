@@ -32,20 +32,24 @@
 #define DISTANCE 170
 
 //Порты датчика цвета
-#define color_S0 4
-#define color_S1 5
-#define color_S2 6
-#define color_S3 7
-#define color_OUT 8
+#define color_S0 33
+#define color_S1 35
+#define color_S2 37
+#define color_S3 39
+#define color_OUT 41
 
 //Значения RGB для синего
-#define RED_BLUE 1000
-#define GREEN_BLUE 1000
-#define BLUE_BLUE 1000
+#define RED_BLUE 150
+#define GREEN_BLUE 123
+#define BLUE_BLUE 33
 //Значения RGB для черного
-#define RED_BLACK 1000
-#define GREEN_BLACK 1000
-#define BLUE_BLACK 1000
+#define RED_BLACK 200
+#define GREEN_BLACK 222
+#define BLUE_BLACK 63
+//Значения RGB для серебристого
+#define RED_SILVER 20
+#define GREEN_SILVER 20
+#define BLUE_SILVER 7
 //Погрешность при котором идеальные значения могут не совпадать с реальными параметрами цвета
 #define COLOR_SPREAD 20
 
