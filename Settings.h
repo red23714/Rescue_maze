@@ -7,6 +7,9 @@
 //Порт серво-мотора
 #define SERVO_PIN 11
 
+//Начальное положение кнопки
+#define START_POS_SERVO 80
+
 //Адреса датчиков расстояния
 #define sensor_r_newAddress 42
 #define sensor_u_newAddress 43
@@ -20,10 +23,11 @@
 #define XSHUT_pin_u 25
 #define XSHUT_pin_l 23
 
-#define START_POS_SERVO 80
-
 //Флаг который позволяет датчикам расстояния видеть большее расстояния, уменьшается точность
 // #define LONG_RANGE
+
+//I2C адресс гироскопа
+#define sensor_gyro_newAdress 0x68
 
 //Расстояние, которое должно быть между боковым датчиком расстояния и стеной 120
 #define DISTANCE_WALL 120 // 120
@@ -51,7 +55,7 @@
 #define GREEN_SILVER 20
 #define BLUE_SILVER 7
 //Погрешность при котором идеальные значения могут не совпадать с реальными параметрами цвета
-#define COLOR_SPREAD 20
+#define COLOR_SPREAD 40
 
 //Средняя скорость робота
 #define SPEED 100

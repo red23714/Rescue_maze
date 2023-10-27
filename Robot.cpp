@@ -5,16 +5,13 @@
 // Инициализация всех датчиков с настройкой
 void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_servo, bool is_color)
 {
-  if (is_button)
-    pinMode(BUTTON_PIN, INPUT_PULLUP);
+  if (is_button) pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   if (is_mpu)
   {
     mpu.init_gyro();
-    if (is_button)
-      mpu.gyro_calibration(BUTTON_PIN);
-    else
-      mpu.gyro_calibration(-1);
+    if (is_button) mpu.gyro_calibration(BUTTON_PIN);
+    else mpu.gyro_calibration(-1);
   }
 
   if (is_dis)
@@ -23,12 +20,10 @@ void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_
     sensor_u.init_dis();
     sensor_l.init_dis();
   }
-  if (is_enc)
-    init_encoder();
-  if (is_servo)
-    init_servo();
-  if (is_color)
-    init_color();
+  
+  if (is_enc) init_encoder();
+  if (is_servo) init_servo();
+  if (is_color) color_sens.init_color();
 }
 
 // Машина состояний, где переключаются текущие действия робота
@@ -37,36 +32,39 @@ void Robot::state_machine()
   switch (current_state)
   {
   case WAIT:
-    if (is_giving)
-      current_state = GIVING;
-    else
-      alg_right_hand();
+    if(is_giving) current_state = state::GIVING;
+    else alg_right_hand();
+
     break;
-  case MOVING:
-    if (mov_forward())
-      current_state = WAIT;
+  case state::MOVING:
+    if (mov_forward()) current_state = state::WAIT;
     break;
-  case ROTATION_RIGHT:
+  case state::ROTATION_RIGHT:
     if (rot_right())
     {
-      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving)
-        current_state = MOVING;
-      else
-        current_state = WAIT;
+      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving) current_state = state::MOVING;
+      else current_state = state::WAIT;
     }
     break;
-  case ROTATION_LEFT:
+  case state::ROTATION_LEFT:
     if (rot_left())
     {
-      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving)
-        current_state = MOVING;
-      else
-        current_state = WAIT;
+      if ((central_dist > DISTANCE || central_dist == -1) && !is_giving) current_state = state::MOVING;
+      else current_state = state::WAIT;
     }
     break;
-  case GIVING:
+  case state::GIVING:
     motor_stop();
     giving(camera_l.get_side(), camera_l.get_letter());
+    break;
+  case state::STANDING:
+    motor_stop();
+    wait(5000);
+    is_stand = true;
+    current_state = state::MOVING;
+    break;
+  case state::RETURN:
+    return_to_point();
     break;
   }
 }
@@ -113,30 +111,7 @@ void Robot::print_gyro()
 // Вывод показаний датчика цвета
 void Robot::print_color()
 {
-  color c = get_color();
-  Serial.print("Color: ");
-  switch (c)
-  {
-  case color::WHITE:
-    Serial.println("White");
-    break;
-
-  case color::BLUE:
-    Serial.println("Blue");
-    break;
-
-  case color::BLACK:
-    Serial.println("Black");
-    break;
-
-  case color::SILVER:
-    Serial.println("Silver");
-    break;
-
-  default:
-    Serial.println("Color sens error");
-    break;
-  }
+  color_sens.print_color();
 }
 
 // Движение вперед с выравниванием по боковым датчикам
@@ -149,19 +124,15 @@ bool Robot::mov_forward()
   right_err = DISTANCE_WALL - right_dist;
   left_err = DISTANCE_WALL - left_dist;
 
-  if (right_dist > DISTANCE)
-    right_err = 0;
-  if (left_dist > DISTANCE)
-    left_err = 0;
+  if (right_dist > DISTANCE) right_err = 0;
+  if (left_dist > DISTANCE) left_err = 0;
 
   err = left_err - right_err;
 
   u = err * K_WALL;
 
-  if (central_dist < DISTANCE_WALL_CENTER && central_dist != -1 && central_dist != 0)
-    is_stop_moving = true;
-  else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER)
-    is_stop_moving = true;
+  if (central_dist < DISTANCE_WALL_CENTER && central_dist != -1 && central_dist != 0) is_stop_moving = true;
+  else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
 
   motors(SPEED + u, SPEED - u);
 
@@ -169,7 +140,6 @@ bool Robot::mov_forward()
   {
     countL = 0;
     countR = 0;
-    delay(1000);
     graph.add_by_angle(map_angle);
   }
 
@@ -213,7 +183,6 @@ bool Robot::rotate(float angle)
   {
     countL = 0;
     countR = 0;
-    delay(1000);
     flag = true;
   }
 
@@ -237,8 +206,6 @@ void Robot::wait(int time_wait)
 {
   float timer_wait = millis();
 
-  bool is_color = false;
-
   do
   {
     for (int i = 0; i < sizeof(periph) / sizeof(periph[0]); i++)
@@ -250,29 +217,19 @@ void Robot::wait(int time_wait)
     central_dist = sensor_u.get_sensor_dis();
     left_dist = sensor_l.get_sensor_dis();
 
-    color color_floor = get_color();
+    color color = color_sens.get_color();
+    if(color == color::BLUE && !is_stand) current_state = state::STANDING; 
+    if(color == color::WHITE) is_stand = false;
 
-    if (!is_giving)
+    letter l = camera_l.get_letter();
+    if (!is_giving && l != letter::N && 
+        graph_length_old != graph.get_graph_length() && map_angle_old != map_angle)
     {
-      letter l = camera_l.get_letter();
-      if (l != 48 && graph_length_old != graph.get_graph_length() && map_angle_old != map_angle)
-      {
-        old_state = current_state;
-        graph_length_old = graph.get_graph_length();
-        map_angle_old = map_angle;
-        Serial.println(l);
-        is_giving = true;
-        camera_l.set_is_update(false);
-      }
+      graph_length_old = graph.get_graph_length();
+      map_angle_old = map_angle;
+      is_giving = true;
+      camera_l.set_is_update(false);
     }
-
-    if (color_floor == BLUE)
-    {
-      time_wait = 5000 - time_wait;
-      is_color = true;
-    }
-    else if (color_floor == BLACK)
-      break; // return_to_point();
 
   } while (millis() - timer_wait < time_wait);
 }
@@ -363,20 +320,20 @@ void Robot::init_servo()
 }
 
 // Выдача спаснабора
-int Robot::giving(int side_in, int count_save)
+int Robot::giving(int side_in, letter count_save)
 {
   int l = 0;
   switch (count_save)
   {
-  case 83:
+  case letter::S:
     l = 2; // S
     break;
 
-  case 72:
+  case letter::H:
     l = 1; // H
     break;
 
-  case 85:
+  case letter::U:
     l = 0; // U
     break;
   }
@@ -412,66 +369,9 @@ int Robot::giving(int side_in, int count_save)
       }
     }
   }
-  current_state = old_state;
+  current_state = state::WAIT;
   is_giving = false;
   camera_l.set_is_update(true);
-}
-
-// Инициализация датчика цвета
-void Robot::init_color()
-{
-  // сконфигурировать пины
-  pinMode(color_S0, 1);
-  pinMode(color_S1, 1);
-  pinMode(color_S2, 1);
-  pinMode(color_S3, 1);
-  pinMode(color_OUT, 0);
-
-  // масштабирование 20%
-  digitalWrite(color_S0, 1);
-  digitalWrite(color_S1, 0);
-}
-// Получение значения цвета на котором стоит робот
-color Robot::get_color()
-{
-  int R = 0;
-  int G = 0;
-  int B = 0;
-
-  // установить R фильтр
-  digitalWrite(color_S2, 0);
-  digitalWrite(color_S3, 0);
-
-  // Получение частоты на выходе
-  R = pulseIn(color_OUT, 0);
-
-  // установить G фильтр
-  digitalWrite(color_S2, 1);
-  digitalWrite(color_S3, 1);
-
-  // Получение частоты на выходе
-  G = pulseIn(color_OUT, 0);
-
-  // установить B фильтр
-  digitalWrite(color_S2, 0);
-  digitalWrite(color_S3, 1);
-
-  // Получение частоты на выходе
-  B = pulseIn(color_OUT, 0);
-
-  if (in_range(R, RED_BLUE, COLOR_SPREAD) && in_range(G, GREEN_BLUE, COLOR_SPREAD) &&
-      in_range(B, BLUE_BLUE, COLOR_SPREAD))
-    return BLUE;
-
-  if (in_range(R, RED_BLACK, COLOR_SPREAD) && in_range(G, GREEN_BLACK, COLOR_SPREAD) &&
-      in_range(B, BLUE_BLACK, COLOR_SPREAD))
-    return BLACK;
-
-  if (in_range(R, RED_SILVER, COLOR_SPREAD) && in_range(G, GREEN_SILVER, COLOR_SPREAD) &&
-      in_range(B, BLUE_SILVER, COLOR_SPREAD))
-    return SILVER;
-
-  return WHITE;
 }
 
 // Инициализация энкодеров

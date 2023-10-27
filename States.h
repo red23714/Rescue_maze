@@ -6,5 +6,7 @@ enum state
   MOVING,
   ROTATION_RIGHT,
   ROTATION_LEFT,
-  GIVING
+  GIVING,
+  STANDING,
+  RETURN
 };

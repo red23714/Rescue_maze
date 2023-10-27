@@ -5,8 +5,7 @@
 #include <MPU9250.h>
 
 #include "Updatable.h"
-
-#define sensor_gyro_newAdress 0x68
+#include "Settings.h"
 
 class Gyro_sens : public MPU9250, public Updatable
 {

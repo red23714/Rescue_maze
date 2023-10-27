@@ -98,7 +98,7 @@ void Gyro_sens::set_pitch_first(int value)
 
 void Gyro_sens::set_roll_first(int value)
 {
-    _first = adduction(value);
+    yaw_first = adduction(value);
 }
 
 void Gyro_sens::print_roll_pitch_yaw()

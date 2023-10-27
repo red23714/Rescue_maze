@@ -21,13 +21,11 @@ void loop()
 {
   // robot.print_dis();
   // robot.print_gyro();
-  robot.print_save();
+  // robot.print_save();
   // robot.print_enc();
-  // robot.print_color();
+  robot.print_color();
 
   robot.wait(1);
-  
-  // robot.wait(1);
 
   // robot.state_machine();
 }

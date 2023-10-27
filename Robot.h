@@ -8,6 +8,7 @@
 #include "Gyro_sens.h"
 #include "Camera.h"
 #include "Dalnometer.h"
+#include "Color_sens.h"
 #include "Updatable.h"
 
 #include "States.h"
@@ -40,7 +41,7 @@ public:
 
     void motors(int, int);
 
-    int giving(int, int);
+    int giving(int, letter);
 
     void wait(int);
 
@@ -54,27 +55,23 @@ private:
     Dalnometer sensor_l = Dalnometer(XSHUT_pin_l, sensor_l_newAddress);
 
     Gyro_sens mpu;
-
     Camera camera_l = Camera(&Serial1, 1);
-
     Servo myservo;
+    Color_sens color_sens;
 
-    Updatable * periph[5] = {&sensor_r, &sensor_u, &sensor_l, &mpu, &camera_l};
+    Updatable * periph[6] = {&sensor_r, &sensor_u, &sensor_l, &mpu, &camera_l, &color_sens};
 
-    state current_state = WAIT;
-    state old_state = WAIT;
+    state current_state = state::WAIT;
     int map_angle = 0;
     int map_angle_old = 0;
     int graph_length_old = 0;
     bool is_return_to = false;
-
     bool is_giving = false;
+    bool is_stand = false;
 
     int right_dist = 0;
     int left_dist = 0;
     int central_dist = 0;
-
-    color current_color = WHITE;
 
     int countL = 0;
     int countR = 0;
@@ -84,9 +81,6 @@ private:
     void return_to_point();
 
     void init_servo();
-
-    void init_color();
-    color get_color();
 
     void init_encoder();
     static void encL();

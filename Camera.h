@@ -54,10 +54,8 @@ public:
     {
         Serial.print("Side: ");
 
-        if (side == 1)
-            Serial.print("Left ");
-        else
-            Serial.print("Right ");
+        if (side == 1) Serial.print("Left ");
+        else Serial.print("Right ");
 
         Serial.print("Letter: ");
 
