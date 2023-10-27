@@ -32,8 +32,14 @@ void Robot::state_machine()
   switch (current_state)
   {
   case WAIT:
-    if(is_giving) current_state = state::GIVING;
-    else alg_right_hand();
+    if(is_giving) 
+    {
+      current_state = state::GIVING;
+    }
+    else 
+    {
+      alg_right_hand();
+    }
 
     break;
   case state::MOVING:
@@ -112,6 +118,44 @@ void Robot::print_gyro()
 void Robot::print_color()
 {
   color_sens.print_color();
+}
+
+void Robot::print_current_state()
+{
+  Serial.print("Current state: ");
+  switch (current_state)
+  {
+  case state::WAIT:
+    Serial.println("WAIT");
+    break;
+
+  case state::MOVING:
+    Serial.println("MOVING");
+    break;
+
+  case state::ROTATION_LEFT:
+    Serial.println("ROTATION_LEFT");
+    break;
+
+  case state::ROTATION_RIGHT:
+    Serial.println("ROTATION_RIGHT");
+    break;
+
+  case state::GIVING:
+    Serial.println("GIVING");
+    break;
+
+  case state::RETURN:
+    Serial.println("RETURN");
+    break;
+
+  case state::STANDING:
+    Serial.println("STANDING");
+    break;
+  
+  default:
+    break;
+  }
 }
 
 // Движение вперед с выравниванием по боковым датчикам
@@ -223,7 +267,7 @@ void Robot::wait(int time_wait)
 
     letter l = camera_l.get_letter();
     if (!is_giving && l != letter::N && 
-        graph_length_old != graph.get_graph_length() && map_angle_old != map_angle)
+        (graph_length_old != graph.get_graph_length() || map_angle_old != map_angle))
     {
       graph_length_old = graph.get_graph_length();
       map_angle_old = map_angle;
@@ -326,15 +370,15 @@ int Robot::giving(int side_in, letter count_save)
   switch (count_save)
   {
   case letter::S:
-    l = 2; // S
+    l = 2;
     break;
 
   case letter::H:
-    l = 1; // H
+    l = 1;
     break;
 
-  case letter::U:
-    l = 0; // U
+  default:
+    print_save();
     break;
   }
 
@@ -476,7 +520,7 @@ void Robot::motors(int value_l, int value_r)
   }
 }
 
-// Остановить оба мотора
+// Остановить оба мотора (левый, правый)
 void Robot::motor_stop()
 {
   if (DEBUG)

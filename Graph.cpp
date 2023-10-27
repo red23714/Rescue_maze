@@ -141,8 +141,8 @@ enum direction Graph::get_move_dir(int x1, int y1, int x2, int y2, int angle)
 //Ограничивает значения исходного угла в диапозоне -360; 360
 int Graph::adduction(int angle)
 {
-    if(angle > 180) angle -= 180;
-    if(angle < -180) angle += 180;
+    while (angle > 180) angle -= 180;
+    while (angle < -180) angle += 180;
 
     return angle;
 }
@@ -200,7 +200,7 @@ Vec<enum moves> Graph::get_move(node to, int angle)
 bool Graph::is_discovered(int x, int y)
 {
     int number = get_node(x, y);
-    if(number != -1) return graph[number].discovered;
+    if (number != -1) return graph[number].discovered;
     else return false;
 }
 

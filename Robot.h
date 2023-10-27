@@ -33,6 +33,7 @@ public:
     void print_save();
     void print_gyro();
     void print_color();
+    void print_current_state();
 
     bool mov_forward();
     bool rotate(float);
@@ -63,8 +64,8 @@ private:
 
     state current_state = state::WAIT;
     int map_angle = 0;
-    int map_angle_old = 0;
-    int graph_length_old = 0;
+    int map_angle_old = -1;
+    int graph_length_old = -1;
     bool is_return_to = false;
     bool is_giving = false;
     bool is_stand = false;
