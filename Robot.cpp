@@ -3,16 +3,12 @@
 #include "Robot.h"
 
 // Инициализация всех датчиков с настройкой
-void Robot::init(bool is_button, bool is_mpu, bool is_dis, bool is_enc, bool is_servo, bool is_color)
+void Robot::init(bool is_button, bool is_dis, bool is_enc, bool is_servo, bool is_color)
 {
-  if (is_button) pinMode(BUTTON_PIN, INPUT_PULLUP);
+  mpu.set_yaw_first(mpu.get_yaw());
+  mpu.set_pitch_first(mpu.get_pitch());
 
-  if (is_mpu)
-  {
-    mpu.init_gyro();
-    if (is_button) mpu.gyro_calibration(BUTTON_PIN);
-    else mpu.gyro_calibration(-1);
-  }
+  if (is_button) pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   if (is_dis)
   {
@@ -111,7 +107,7 @@ void Robot::print_save()
 // Вывод показаний гироскопа
 void Robot::print_gyro()
 {
-  mpu.print_roll_pitch_yaw();
+  mpu.print_gyro();
 }
 
 // Вывод показаний датчика цвета
@@ -199,7 +195,6 @@ bool Robot::rotate(float angle)
 
   if (flag)
   {
-    // mpu.set_yaw_first(0);
     mpu.set_yaw_first(mpu.get_yaw());
     flag = false;
   }

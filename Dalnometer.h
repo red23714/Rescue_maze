@@ -1,6 +1,7 @@
 #pragma once
 
 #include <VL53L0X.h>
+#include <Wire.h>
 #include "Updatable.h"
 
 class Dalnometer : public VL53L0X, public Updatable

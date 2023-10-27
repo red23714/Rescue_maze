@@ -1,48 +1,52 @@
 #pragma once
 
-#include <Arduino.h>
-#include <Wire.h>
-#include <MPU9250.h>
-
+#include "Letters.h"
 #include "Updatable.h"
-#include "Settings.h"
+#include "Arduino.h"
 
-class Gyro_sens : public MPU9250, public Updatable
+class Gyro_sens : public Updatable
 {
 public:
-  Gyro_sens() {
+    Gyro_sens(HardwareSerial *Serial) : s(Serial)
+    {
+        s->begin(115200);
+    }
 
-  };
+    void update() override
+    {
+        if(s->available())
+        {
+          int n = s->read();
+          if(n == 255) is_yaw = true;
+          if (is_yaw && n != 255) 
+          {
+            yaw = map(n, 0, 254, 0, 360);
+            is_yaw = false;
+          }
+          if(!is_yaw && n != 255) pitch = map(n, 0, 254, -90, 90);
+        }
+    }
 
-  void init_gyro();
+    int inline get_yaw() { return yaw - yaw_first; }
+    int inline get_pitch() { return pitch - pitch_first; }
 
-  float roll();
-  float pitch();
-  float yaw();
+    void set_yaw_first(int value) { yaw_first = value; }
+    void set_pitch_first(int value) { pitch_first = value; }
 
-  void print_roll_pitch_yaw();
-  void print_calibration();
-
-  void gyro_calibration(int);
-
-  void update() override;
-
-  int get_yaw();
-  int get_pitch();
-  int get_roll();
-
-  void set_yaw_first(int value);
-  void set_pitch_first(int value);
-  void set_roll_first(int value);
+    void print_gyro()
+    {
+        Serial.print("Yaw: ");
+        Serial.print(yaw);
+        Serial.print(" Pitch: ");
+        Serial.println(pitch);
+    }
 
 private:
-  float adduction(float);
+    int yaw = 0;
+    int pitch = 0;
+    int yaw_first = 0;
+    int pitch_first = 0;
 
-  int roll_angle = 0;
-  int yaw_angle = 0;
-  int pitch_angle = 0;
-
-  int roll_first = 0;
-  int pitch_first = 0;
-  int yaw_first = 0;
+    bool is_yaw = false;
+    HardwareSerial *s;
 };

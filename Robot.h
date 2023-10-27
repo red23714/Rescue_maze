@@ -22,7 +22,7 @@
 class Robot
 {
 public:
-    void init(bool is_button = true, bool is_mpu = true, bool is_dis = true,
+    void init(bool is_button = true, bool is_dis = true,
               bool is_enc = true, bool is_servo = true, bool is_color = true);
 
     void state_machine();
@@ -55,7 +55,7 @@ private:
     Dalnometer sensor_u = Dalnometer(XSHUT_pin_u, sensor_u_newAddress);
     Dalnometer sensor_l = Dalnometer(XSHUT_pin_l, sensor_l_newAddress);
 
-    Gyro_sens mpu;
+    Gyro_sens mpu = Gyro_sens(&Serial2);
     Camera camera_l = Camera(&Serial1, 1);
     Servo myservo;
     Color_sens color_sens;
