@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-//Ограничивает значения исходного угла в диапозоне -360; 360
+//Ограничивает значения исходного угла в диапозоне -180; 180
 inline float adduction(float angle)
 {
     while(angle > 180) angle -= 360;

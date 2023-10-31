@@ -40,7 +40,7 @@ void Graph::add_by_angle(int map_angle, bool discovered = true)
         break;
     }
 
-    add_node(x_local, y_local, discovered);
+    add_node(x_local, y_local, false);
   }
   else 
   {
@@ -375,4 +375,10 @@ node Graph::get_current_node()
 int Graph::get_graph_length()
 {
     return graph.size();
+}
+
+void Graph::set_current_node(cell_type type = cell_type::USUAL, letter letter_cell = letter::N)
+{
+    graph[current_node].type = type;
+    graph[current_node].letter_cell = letter_cell;
 }

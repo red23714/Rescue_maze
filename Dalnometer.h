@@ -42,6 +42,7 @@ public:
             // lower the return signal rate limit (default is 0.25 MCPS)
             VL53L0X::setSignalRateLimit(0.1);
         }
+        Serial.println("Init dis");
     }
 
     // Функция для получения расстояния с датчиков
@@ -50,13 +51,10 @@ public:
         if (VL53L0X::timeoutOccurred()) Serial.print(" TIMEOUT");
         sensor_dis = VL53L0X::readRangeContinuousMillimeters(); //-50
 
-        if (sensor_dis == 8191)
-            return -1;
+        if (sensor_dis == 8191) return -1;
 
-        if (sensor_dis == 8190)
-            sensor_dis = sensor_dis_old;
-        else
-            sensor_dis_old = sensor_dis;
+        if (sensor_dis == 8190) sensor_dis = sensor_dis_old;
+        else sensor_dis_old = sensor_dis;
 
         return sensor_dis;
     }

@@ -1,3 +1,4 @@
+#include "Letters.h"
 enum cell_type{
     USUAL = 0,
     WATER,
@@ -12,7 +13,9 @@ struct node
     int x;
     int y;
     bool discovered = false;
-    enum cell_type type = USUAL;
+    letter letter_cell = letter::N;
+    cell_type type = cell_type::USUAL;
+
 
     bool operator ==(node a)
     {
@@ -42,7 +45,13 @@ struct node
         Serial.print(y);
         Serial.print(" ");
         Serial.print("discovered: ");
-        Serial.println(discovered);
+        Serial.print(discovered);
+        Serial.print(" ");
+        Serial.print("letter: ");
+        Serial.print(letter_cell);
+        Serial.print(" ");
+        Serial.print("type: ");
+        Serial.println(type);
     }
     
 private: 

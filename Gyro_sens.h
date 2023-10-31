@@ -2,43 +2,63 @@
 
 #include "Letters.h"
 #include "Updatable.h"
+#include "Utils.h"
 #include "Arduino.h"
 
 class Gyro_sens : public Updatable
 {
 public:
-    Gyro_sens(HardwareSerial *Serial) : s(Serial)
+    Gyro_sens(HardwareSerial *Serial_port) : s(Serial_port)
     {
         s->begin(115200);
     }
 
-    void update() override
+    void init_gyro()
     {
-        if(s->available())
+        Serial.println("Init gyro");
+
+        float timer_wait = millis();
+        while (millis() - timer_wait < 15000)
         {
-          int n = s->read();
-          if(n == 255) is_yaw = true;
-          if (is_yaw && n != 255) 
-          {
-            yaw = map(n, 0, 254, 0, 360);
-            is_yaw = false;
-          }
-          if(!is_yaw && n != 255) pitch = map(n, 0, 254, -90, 90);
+            update();
+            Serial.println(yaw);
+            delay(1);
         }
+
+        reset_yaw();
+        pitch_first = pitch;
     }
 
-    int inline get_yaw() { return yaw - yaw_first; }
-    int inline get_pitch() { return pitch - pitch_first; }
+    void update() override
+    {
+        long long timer = millis();
 
-    void set_yaw_first(int value) { yaw_first = value; }
-    void set_pitch_first(int value) { pitch_first = value; }
+        while (s->read() != 255) {if(millis() - timer > 1000) return;}
+        while(s->available() < 2) {if(millis() - timer > 1000) return;}
+        
+        int n1 = s->read();
+        int n2 = s->read();
+
+        yaw = map(n1, 0, 254, -180, 180);
+        pitch = adduction(map(n2, 0, 254, 0, 360));
+    }
+
+    int inline get_yaw() { return adduction(yaw - yaw_first); }
+    int inline get_pitch() { return pitch; }
+    int inline get_pitch_first() { return pitch_first; }
+
+    void reset_yaw()
+    {
+        update();
+        yaw_first = adduction(get_yaw() + yaw_first);
+    }
 
     void print_gyro()
     {
         Serial.print("Yaw: ");
-        Serial.print(yaw);
+        Serial.print(get_yaw());
         Serial.print(" Pitch: ");
-        Serial.println(pitch);
+        Serial.println(get_pitch());
     }
 
 private:

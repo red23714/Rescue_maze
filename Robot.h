@@ -22,8 +22,10 @@
 class Robot
 {
 public:
-    void init(bool is_button = true, bool is_dis = true,
-              bool is_enc = true, bool is_servo = true, bool is_color = true);
+    Robot();
+    ~Robot();
+
+    void init();
 
     void state_machine();
 
@@ -46,8 +48,9 @@ public:
 
     void wait(int);
 
+    void reset_robot();
 private:
-    Graph graph;
+    Graph* graph;
 
     static Robot *instance_;
 
@@ -57,18 +60,21 @@ private:
 
     Gyro_sens mpu = Gyro_sens(&Serial2);
     Camera camera_l = Camera(&Serial1, 1);
+    Camera camera_r = Camera(&Serial3, 2);
     Servo myservo;
     Color_sens color_sens;
 
-    Updatable * periph[6] = {&sensor_r, &sensor_u, &sensor_l, &mpu, &camera_l, &color_sens};
-
     state current_state = state::WAIT;
+    state old_state = state::WAIT;
+    state old_rot_state = state::ROTATION_RIGHT;
     int map_angle = 0;
     int map_angle_old = -1;
     int graph_length_old = -1;
     bool is_return_to = false;
     bool is_giving = false;
     bool is_stand = false;
+    int side = 0;
+    int side_giving = 0;
 
     int right_dist = 0;
     int left_dist = 0;

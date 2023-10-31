@@ -22,6 +22,8 @@ public:
         // масштабирование 20%
         digitalWrite(color_S0, 1);
         digitalWrite(color_S1, 0);
+
+        Serial.println("Init color");
     }
 
     void update() override

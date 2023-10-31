@@ -14,40 +14,15 @@ public:
 
     void update() override
     {
-        if (s->available() && is_update)
+        if (s->available())
         {
             int n = s->read();
-            switch (n)
-            {
-            case 48:
-                letter_detect = N;
-                break;
-            case 72:
-                letter_detect = H;
-                break;
-            case 83:
-                letter_detect = S;
-                break;
-            case 85:
-                letter_detect = U;
-                break;
-            case 71:
-                letter_detect = GREEN;
-                break;
-            case 82:
-                letter_detect = RED;
-                break;
-            case 89:
-                letter_detect = YELLOW;
-                break;
-            default:
-                letter_detect = 1;
-                break;
-            }
+            if(is_update) letter_detect = (letter) n;
         }
     }
+    
     letter inline get_letter() { return letter_detect; }
-    void set_is_update(bool value) { is_update = value; }
+    void set_is_update(bool flag) { is_update = flag; letter_detect = letter::N; }
     int inline get_side() { return side; }
 
     void print_camera()
@@ -62,42 +37,42 @@ public:
         switch (letter_detect)
         {
         case letter::N:
-            Serial.println("N");
+            Serial.print("N");
             break;
 
         case letter::H:
-            Serial.println("H");
+            Serial.print("H");
             break;
 
         case letter::S:
-            Serial.println("S");
+            Serial.print("S");
             break;
 
         case letter::U:
-            Serial.println("U");
+            Serial.print("U");
             break;
 
         case letter::GREEN:
-            Serial.println("Green");
+            Serial.print("Green");
             break;
 
         case letter::RED:
-            Serial.println("Red");
+            Serial.print("Red");
             break;
 
         case letter::YELLOW:
-            Serial.println("Yellow");
+            Serial.print("Yellow");
             break;
 
         default:
-            Serial.println("Camera error");
+            Serial.print("Camera error");
             break;
         }
     }
 
 private:
-    letter letter_detect;
+    letter letter_detect = letter::N;
+    bool is_update = true;
     HardwareSerial *s;
     int side = 0;
-    bool is_update = true;
 };
