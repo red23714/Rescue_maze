@@ -1,16 +1,15 @@
 #pragma once
 
 #include "Arduino.h"
-#include <VL53L0X.h>
-#include <Servo.h>
 
-#include "Graph.h"
 #include "Gyro_sens.h"
 #include "Camera.h"
 #include "Dalnometer.h"
 #include "Color_sens.h"
+#include "Serva.h"
 #include "Updatable.h"
 
+#include "Graph.h"
 #include "States.h"
 #include "Colors.h"
 #include "Letters.h"
@@ -29,6 +28,13 @@ public:
 
     void state_machine();
 
+    void wait(int);
+
+    bool mov_forward();
+    bool rotate(float);
+    int rot_right();
+    int rot_left();
+
     void print_dis();
     void print_enc();
     void print_map();
@@ -37,16 +43,9 @@ public:
     void print_color();
     void print_current_state();
 
-    bool mov_forward();
-    bool rotate(float);
-    int rot_right();
-    int rot_left();
-
     void motors(int, int);
 
     int giving(int, letter);
-
-    void wait(int);
 
     void reset_robot();
 private:
@@ -61,15 +60,14 @@ private:
     Gyro_sens mpu = Gyro_sens(&Serial2);
     Camera camera_l = Camera(&Serial1, 1);
     Camera camera_r = Camera(&Serial3, 2);
-    Servo myservo;
+
+    Serva myserva;
     Color_sens color_sens;
 
     state current_state = state::WAIT;
     state old_state = state::WAIT;
     state old_rot_state = state::ROTATION_RIGHT;
     int map_angle = 0;
-    int map_angle_old = -1;
-    int graph_length_old = -1;
     bool is_return_to = false;
     bool is_giving = false;
     bool is_stand = false;
@@ -95,7 +93,6 @@ private:
     void handleEncL();
     void handleEncR();
 
-    void motor_l(int);
-    void motor_r(int);
+    void motor(int, int, int);
     void motor_stop();
 };

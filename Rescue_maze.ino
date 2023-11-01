@@ -12,7 +12,7 @@ void setup()
 void loop()
 {
   // robot.print_dis();
-  // robot.print_gyro();
+  robot.print_gyro();
   // robot.print_save();
   // robot.print_enc();
   // robot.print_color();

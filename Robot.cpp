@@ -17,7 +17,7 @@ void Robot::init()
 {
   Serial.println("Init");
 
-  init_servo();
+  myserva.init_servo();
 
   init_encoder();
 
@@ -43,87 +43,123 @@ void Robot::init()
 // Машина состояний, где переключаются текущие действия робота
 void Robot::state_machine()
 {
+  if ((current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT || current_state == state::WAIT) && is_giving)
+  {
+    old_state = current_state;
+    current_state = state::GIVING;
+  }
+
   switch (current_state)
   {
-  case WAIT:
-    if(is_giving) 
-    {
-      old_state = current_state;
-      current_state = state::GIVING;
-    }
-    else alg_right_hand();
+  case state::WAIT:
+     alg_right_hand();
 
-    // camera_l.set_is_update(false);
-    // camera_r.set_is_update(false);
     break;
   case state::MOVING:
     if (mov_forward()) 
     {
       current_state = state::WAIT;
-      // camera_l.set_is_update(true);
-      // camera_r.set_is_update(true);
     }
     break;
   case state::ROTATION_RIGHT:
     if (rot_right())
     {
       old_rot_state = state::ROTATION_RIGHT;
-      if ((central_dist > DISTANCE || central_dist == -1)) 
-      {
-        if (is_giving)
-        {
-          current_state = state::GIVING;
-          old_state = state::MOVING;
-        }
-        else current_state = state::MOVING;
-      }
+      if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
       else current_state = state::WAIT;
-      // camera_l.set_is_update(true);
-      // camera_r.set_is_update(true);
     }
     break;
   case state::ROTATION_LEFT:
     if (rot_left())
     {
       old_rot_state = state::ROTATION_LEFT;
-      if ((central_dist > DISTANCE || central_dist == -1)) 
-      {
-        if (is_giving)
-        {
-          current_state = state::GIVING;
-          old_state = state::MOVING;
-        }
-        else current_state = state::MOVING;
-      }
+      if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
       else current_state = state::WAIT;
-      // camera_l.set_is_update(true);
-      // camera_r.set_is_update(true);
     }
     break;
   case state::GIVING:
     motor_stop();
 
-    giving(side_giving, graph->get_current_node().letter_cell);
+    myserva.giving(side_giving, graph->get_current_node().letter_cell);
 
     current_state = old_state;
     is_giving = false;
     break;
   case state::STANDING:
-    motors(100, 100);
-    delay(100);
-    motor_stop();
     graph->set_current_node(cell_type::WATER);
+    motors(100, 100);
+    delay(500);
+    motor_stop();
     delay(5000);
+    is_stand = true;
     current_state = state::MOVING;
     break;
   case state::RETURN:
     graph->set_current_node(cell_type::HOLE);
-    motor_stop();
     motors(-100, -100);
     delay(150);
     current_state = old_rot_state;
     break;
   }
+}
+
+// Обновление всех показаний с датчиков
+void Robot::wait(int time_wait)
+{
+  float timer_wait = millis();
+  do
+  {
+    if (current_state == state::ROTATION_LEFT || 
+        current_state == state::ROTATION_RIGHT)
+    {
+      mpu.update();
+    }
+
+    camera_r.update();
+    camera_l.update();
+
+    sensor_l.update();
+    sensor_r.update();
+    sensor_u.update();
+
+    color_sens.update();
+
+    right_dist = sensor_r.get_sensor_dis();
+    central_dist = sensor_u.get_sensor_dis();
+    left_dist = sensor_l.get_sensor_dis();
+
+    color color = color_sens.get_color();
+    if(color == color::BLUE && !is_stand) current_state = state::STANDING; 
+    if(color == color::WHITE) is_stand = false;
+    if(color == color::BLACK) current_state = state::RETURN;
+
+    side = 0;
+    
+    letter l = camera_l.get_letter();
+    letter r = camera_r.get_letter();
+    // print_save();
+    if ((current_state == WAIT || current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT) && 
+        color != color::SILVER)
+    {
+      if (l != letter::N && left_dist < DISTANCE_CAMERA) side = 1;
+      if (r != letter::N && right_dist < DISTANCE_CAMERA) side = 2;
+    }
+
+    if (!is_giving && side != 0 &&
+        graph->get_current_node().letter_cell == letter::N)
+    {
+      if(side == 1) graph->set_current_node(cell_type::USUAL, l);
+      else graph->set_current_node(cell_type::USUAL, r);
+
+      side_giving = side;
+
+      side = 0;
+      is_giving = true;
+    }
+
+  } while (millis() - timer_wait < time_wait);
+
+  if(digitalRead(BUTTON_PIN) == 0) reset_robot();
 }
 
 // Вывод показаний датчиков расстояния
@@ -301,60 +337,6 @@ int Robot::rot_left()
   return rotate(-90);
 }
 
-// Обновление всех показаний с датчиков
-void Robot::wait(int time_wait)
-{
-  float timer_wait = millis();
-  do
-  {
-    if (current_state == state::ROTATION_LEFT || 
-        current_state == state::ROTATION_RIGHT)
-    {
-      mpu.update();
-    }
-
-    camera_r.update();
-    camera_l.update();
-
-    sensor_l.update();
-    sensor_r.update();
-    sensor_u.update();
-
-    color_sens.update();
-
-    right_dist = sensor_r.get_sensor_dis();
-    central_dist = sensor_u.get_sensor_dis();
-    left_dist = sensor_l.get_sensor_dis();
-
-    color color = color_sens.get_color();
-    if(color == color::BLUE) current_state = state::RETURN; 
-    if(color == color::BLACK) current_state = state::RETURN;
-
-    side = 0;
-    
-    letter l = camera_l.get_letter();
-    letter r = camera_r.get_letter();
-    // print_save();
-    if(l != letter::N && left_dist < DISTANCE_CAMERA && current_state == WAIT) side = 1;
-    if (r != letter::N && right_dist < DISTANCE_CAMERA && current_state == WAIT) side = 2;
-    
-    if (!is_giving && side != 0 &&
-        graph->get_current_node().letter_cell == letter::N)
-    {
-      if(side == 1) graph->set_current_node(cell_type::USUAL, l);
-      else graph->set_current_node(cell_type::USUAL, r);
-
-      side_giving = side;
-
-      side = 0;
-      is_giving = true;
-    }
-
-  } while (millis() - timer_wait < time_wait);
-
-  if(digitalRead(BUTTON_PIN) == 0) reset_robot();
-}
-
 // Алгоритм правой ркуи для прохождения лабиринта
 void Robot::alg_right_hand()
 {
@@ -362,8 +344,7 @@ void Robot::alg_right_hand()
   {
     current_state = ROTATION_RIGHT;
 
-    if (left_dist > DISTANCE)
-      graph->add_by_angle(map_angle, false);
+    if (left_dist > DISTANCE) graph->add_by_angle(map_angle, false);
 
     map_angle = adduction(map_angle - 90);
   }
@@ -371,8 +352,7 @@ void Robot::alg_right_hand()
   {
     current_state = MOVING;
 
-    if (left_dist > DISTANCE)
-      graph->add_by_angle(map_angle, false);
+    if (left_dist > DISTANCE) graph->add_by_angle(map_angle, false);
   }
   else
   {
@@ -408,105 +388,11 @@ void Robot::alg_left_hand()
 // Возврат к точке на карте где робот не был
 void Robot::return_to_point()
 {
-  Serial.println("Lets goooo");
-  node point = graph->get_not_discovered();
-  Vec<enum moves> moves = graph->get_move(point, 0);
+  // node point = graph->get_not_discovered();
+  // Vec<enum moves> moves = graph->get_move(point, 0);
 
-  for (int i = 0; i < moves.size(); i++)
-  {
-    switch (moves[i])
-    {
-    case ROTATE_RIGHT:
-      current_state = ROTATION_RIGHT;
-      break;
-    case ROTATE_LEFT:
-      current_state = ROTATION_LEFT;
-      break;
-    case MOVE_FORWARD:
-      current_state = MOVING;
-      break;
-    default:
-      break;
-    }
-  }
-}
-
-// Инициализация сервы
-void Robot::init_servo()
-{
-  myservo.attach(SERVO_PIN);
-  Serial.println("Init servo");
-}
-
-// Выдача спаснабора
-int Robot::giving(int side_in, letter count_save)
-{
-  long long timer = millis();
-
-  int l = 0;
-  switch (count_save)
-  {
-  case letter::H:
-    l = 3;
-    break;
-
-  case letter::S:
-    l = 2;
-    break;
-
-  case letter::RED:
-    l = 1;
-    break;
-
-  case letter::YELLOW:
-    l = 1;
-    break;
-
-  default:
-    break;
-  }
-
-  for (int n = 0; n < l; n++)
-  {
-    digitalWrite(LED_B, HIGH);
-
-    if (side_in == 1)
-    {
-      for (int i = START_POS_SERVO; i < 160; i++)
-      {
-        myservo.write(i);
-        delay(5);
-      }
-      delay(200);
-      digitalWrite(LED_B, LOW);
-      for (int i = 160; i > START_POS_SERVO; i--)
-      {
-        myservo.write(i);
-        delay(5);
-      }
-      delay(200);
-    }
-    else if (side_in == 2)
-    {
-      for (int i = START_POS_SERVO; i > 0; i--)
-      {
-        myservo.write(i);
-        delay(5);
-      }
-      delay(200);
-      digitalWrite(LED_B, LOW);
-      for (int i = 0; i < START_POS_SERVO; i++)
-      {
-        myservo.write(i);
-        delay(5);
-      }
-      delay(200);
-    }
-  }
-
-  if(l == 0) digitalWrite(LED_B, HIGH);
-  while (millis() - timer < 5000);
-  if(l == 0) digitalWrite(LED_B, LOW);
+  // current_state = moves[0];
+  // moves.remove(0);
 }
 
 void Robot::reset_robot()
@@ -517,11 +403,10 @@ void Robot::reset_robot()
   old_state = state::WAIT;
   old_rot_state = state::ROTATION_RIGHT;
   map_angle = 0;
-  map_angle_old = -1;
-  graph_length_old = -1;
   is_return_to = false;
   is_giving = false;
   side = 0;
+  side_giving = 0;
 
   right_dist = 0;
   left_dist = 0;
@@ -530,19 +415,18 @@ void Robot::reset_robot()
   countL = 0;
   countR = 0;
 
-  // camera_l.set_is_update(true);
-  // camera_r.set_is_update(true);
-
   delete graph;
   graph = new Graph();
 
-  myservo.write(START_POS_SERVO);
+  myserva.start_pos();
 
   digitalWrite(LED_B, HIGH);
   delay(1000);
   while (digitalRead(BUTTON_PIN) == 1);
   digitalWrite(LED_B, LOW);
   delay(1000);
+
+  wait(1);
 }
 
 // Инициализация энкодеров
@@ -577,58 +461,29 @@ void Robot::handleEncR()
 Robot *Robot::instance_;
 
 // Подать значение на левый мотор
-void Robot::motor_l(int value)
+void Robot::motor(int value, int m_1, int m_2)
 {
   int sign_v = sign(value);
-  if (abs(value) > 255)
-    value = 255 * sign_v;
-  value = sign_v * (255 - abs(value));
-
-  if (value == 0 && sign_v == 0)
-  {
-    digitalWrite(M1_1, 1);
-    digitalWrite(M1_2, 1);
-  }
-  else
-  {
-    if (sign_v > 0)
-    {
-      digitalWrite(M1_1, 1);
-      analogWrite(M1_2, abs(value));
-    }
-    else
-    {
-      digitalWrite(M1_2, 1);
-      analogWrite(M1_1, abs(value));
-    }
-  }
-}
-
-// Подать значение на правый мотор
-void Robot::motor_r(int value)
-{
-  int sign_v = -1 * sign(value);
-  if (abs(value) > 255)
-    value = 255 * sign_v;
+  if (abs(value) > 255) value = 255 * sign_v;
 
   value = sign_v * (255 - abs(value));
 
   if (value == 0 && sign_v == 0)
   {
-    digitalWrite(M2_1, 1);
-    digitalWrite(M2_2, 1);
+    digitalWrite(m_1, 1);
+    digitalWrite(m_2, 1);
   }
   else
   {
     if (sign_v > 0)
     {
-      digitalWrite(M2_1, 1);
-      analogWrite(M2_2, abs(value));
+      digitalWrite(m_1, 1);
+      analogWrite(m_2, abs(value));
     }
     else
     {
-      digitalWrite(M2_2, 1);
-      analogWrite(M2_1, abs(value));
+      digitalWrite(m_2, 1);
+      analogWrite(m_1, abs(value));
     }
   }
 }
@@ -636,15 +491,10 @@ void Robot::motor_r(int value)
 // Подать значения на оба мотора (левый, правый)
 void Robot::motors(int value_l, int value_r)
 {
-  if (DEBUG)
+  if (!DEBUG)
   {
-    // Serial.println(value_l);
-    // Serial.println(value_r);
-  }
-  else
-  {
-    motor_l(value_l);
-    motor_r(value_r);
+    motor(value_l, M1_1, M1_2);
+    motor(value_r, M2_1, M2_2);
   }
 }
 
@@ -658,7 +508,6 @@ void Robot::motor_stop()
   }
   else
   {
-    motor_l(0);
-    motor_r(0);
+    motors(0, 0);
   }
 }
