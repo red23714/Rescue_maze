@@ -8,6 +8,7 @@
 #include "Color_sens.h"
 #include "Serva.h"
 #include "Updatable.h"
+#include "Static.h"
 
 #include "Graph.h"
 #include "States.h"
@@ -45,8 +46,6 @@ public:
 
     void motors(int, int);
 
-    int giving(int, letter);
-
     void reset_robot();
 private:
     Graph* graph;
@@ -64,9 +63,11 @@ private:
     Serva myserva;
     Color_sens color_sens;
 
+    Timers timers;
+    Flags flags;
+
     state current_state = state::WAIT;
     state old_state = state::WAIT;
-    state old_rot_state = state::ROTATION_RIGHT;
     int map_angle = 0;
     bool is_return_to = false;
     bool is_giving = false;
@@ -85,14 +86,13 @@ private:
     void alg_left_hand();
     void return_to_point();
 
-    void init_servo();
-
     void init_encoder();
     static void encL();
     static void encR();
     void handleEncL();
     void handleEncR();
 
-    void motor(int, int, int);
+    void motor_r(int);
+    void motor_l(int);
     void motor_stop();
 };

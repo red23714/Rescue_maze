@@ -32,7 +32,15 @@ void Robot::init()
 
   color_sens.init_color();
 
-  mpu.init_gyro();
+  if(digitalRead(BUTTON_PIN) == 0) 
+  {
+    digitalWrite(LED_B, LOW);
+    delay(100);
+    digitalWrite(LED_B, HIGH);
+
+    mpu.init_gyro();
+  }
+
   digitalWrite(LED_B, LOW);
 
   while (digitalRead(BUTTON_PIN) == 1);
@@ -43,11 +51,11 @@ void Robot::init()
 // Машина состояний, где переключаются текущие действия робота
 void Robot::state_machine()
 {
-  if ((current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT || current_state == state::WAIT) && is_giving)
-  {
-    old_state = current_state;
-    current_state = state::GIVING;
-  }
+  // if ((current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT || current_state == state::WAIT) && is_giving)
+  // {
+  //   old_state = current_state;
+  //   current_state = state::GIVING;
+  // }
 
   switch (current_state)
   {
@@ -64,7 +72,6 @@ void Robot::state_machine()
   case state::ROTATION_RIGHT:
     if (rot_right())
     {
-      old_rot_state = state::ROTATION_RIGHT;
       if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
       else current_state = state::WAIT;
     }
@@ -72,7 +79,6 @@ void Robot::state_machine()
   case state::ROTATION_LEFT:
     if (rot_left())
     {
-      old_rot_state = state::ROTATION_LEFT;
       if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
       else current_state = state::WAIT;
     }
@@ -87,18 +93,24 @@ void Robot::state_machine()
     break;
   case state::STANDING:
     graph->set_current_node(cell_type::WATER);
+
     motors(100, 100);
-    delay(500);
+    delay(1500);
     motor_stop();
     delay(5000);
+
     is_stand = true;
     current_state = state::MOVING;
     break;
   case state::RETURN:
     graph->set_current_node(cell_type::HOLE);
+
     motors(-100, -100);
-    delay(150);
-    current_state = old_rot_state;
+    delay(1500);
+
+    while (!rotate(180)) wait(1);
+    
+    current_state = state::WAIT;
     break;
   }
 }
@@ -107,12 +119,14 @@ void Robot::state_machine()
 void Robot::wait(int time_wait)
 {
   float timer_wait = millis();
+
   do
   {
-    if (current_state == state::ROTATION_LEFT || 
-        current_state == state::ROTATION_RIGHT)
+    if(millis() - timers.timer_mpu_update > 100 || current_state == state::ROTATION_LEFT || 
+      current_state == state::ROTATION_RIGHT || current_state == state::RETURN)
     {
       mpu.update();
+      timers.timer_mpu_update = millis();
     }
 
     camera_r.update();
@@ -287,16 +301,14 @@ bool Robot::rotate(float angle)
 {
   float err = 0, u = 0, delta, i;
   bool is_stop_rotate = false;
-  static float timer = millis(), timer_i = millis();
-  static bool flag = true;
 
-  if (flag)
+  if (flags.flag_rotate)
   {
     mpu.reset_yaw();
-    flag = false;
+    flags.flag_rotate = false;
   }
 
-  delta = millis() - timer_i;
+  delta = millis() - timers.timer_i_rotate;
 
   err = adduction(angle + mpu.get_yaw());
 
@@ -305,21 +317,21 @@ bool Robot::rotate(float angle)
 
   u = err * K_ROT + i * K_WALL_I;
 
-  timer_i = millis();
+  timers.timer_i_rotate = millis();
 
   // if(abs(u) < 50) u = 50 * sign(u);
   if (abs(u) > 180) u = 180 * sign(u);
 
   motors(u, -u);
 
-  if (abs(err) > K_STOP_ROTATE) timer = millis();
-  if (millis() - timer > 500) is_stop_rotate = true;
+  if (abs(err) > K_STOP_ROTATE) timers.timer_rotate = millis();
+  if (millis() - timers.timer_rotate > 500) is_stop_rotate = true;
 
   if (is_stop_rotate)
   {
     countL = 0;
     countR = 0;
-    flag = true;
+    flags.flag_rotate = true;
   }
 
   return is_stop_rotate;
@@ -401,19 +413,17 @@ void Robot::reset_robot()
 
   current_state = state::WAIT;
   old_state = state::WAIT;
-  old_rot_state = state::ROTATION_RIGHT;
   map_angle = 0;
   is_return_to = false;
   is_giving = false;
   side = 0;
   side_giving = 0;
 
-  right_dist = 0;
-  left_dist = 0;
-  central_dist = 0;
-
   countL = 0;
   countR = 0;
+
+  flags.reset();
+  timers.reset();
 
   delete graph;
   graph = new Graph();
@@ -426,7 +436,18 @@ void Robot::reset_robot()
   digitalWrite(LED_B, LOW);
   delay(1000);
 
-  wait(1);
+  camera_r.update();
+  camera_l.update();
+
+  sensor_l.update();
+  sensor_r.update();
+  sensor_u.update();
+
+  right_dist = sensor_r.get_distance();
+  left_dist = sensor_l.get_distance();
+  central_dist = sensor_u.get_distance();
+
+  color_sens.update();
 }
 
 // Инициализация энкодеров
@@ -461,40 +482,72 @@ void Robot::handleEncR()
 Robot *Robot::instance_;
 
 // Подать значение на левый мотор
-void Robot::motor(int value, int m_1, int m_2)
+void Robot::motor_l(int value)
 {
   int sign_v = sign(value);
+
   if (abs(value) > 255) value = 255 * sign_v;
 
   value = sign_v * (255 - abs(value));
-
   if (value == 0 && sign_v == 0)
   {
-    digitalWrite(m_1, 1);
-    digitalWrite(m_2, 1);
+    digitalWrite(M1_1, 1);
+    digitalWrite(M1_2, 1);
   }
   else
   {
     if (sign_v > 0)
     {
-      digitalWrite(m_1, 1);
-      analogWrite(m_2, abs(value));
+      digitalWrite(M1_1, 1);
+      analogWrite(M1_2, abs(value));
     }
     else
     {
-      digitalWrite(m_2, 1);
-      analogWrite(m_1, abs(value));
+      digitalWrite(M1_2, 1);
+      analogWrite(M1_1, abs(value));
     }
   }
 }
 
+// Подать значение на правый мотор
+void Robot::motor_r(int value)
+{
+  int sign_v = -1 * sign(value);
+
+  if (abs(value) > 255) value = 255 * sign_v;
+
+  value = sign_v * (255 - abs(value));
+  if (value == 0 && sign_v == 0)
+  {
+    digitalWrite(M2_1, 1);
+    digitalWrite(M2_2, 1);
+  }
+  else
+  {
+    if (sign_v > 0)
+    {
+      digitalWrite(M2_1, 1);
+      analogWrite(M2_2, abs(value));
+    }
+    else
+    {
+      digitalWrite(M2_2, 1);
+      analogWrite(M2_1, abs(value));
+    }
+  }
+}
 // Подать значения на оба мотора (левый, правый)
 void Robot::motors(int value_l, int value_r)
 {
-  if (!DEBUG)
+  if (DEBUG)
   {
-    motor(value_l, M1_1, M1_2);
-    motor(value_r, M2_1, M2_2);
+    // Serial.println(value_l);
+    // Serial.println(value_r);
+  }
+  else if (!DEBUG)
+  {
+    motor_l(value_l);
+    motor_r(value_r);
   }
 }
 
@@ -508,6 +561,7 @@ void Robot::motor_stop()
   }
   else
   {
-    motors(0, 0);
+    motor_l(0);
+    motor_r(0);
   }
 }
