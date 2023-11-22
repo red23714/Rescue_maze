@@ -2,21 +2,29 @@
 #include "HardwareSerial.h"
 #include "Robot.h"
 
-Robot::Robot()
-{
-  graph = new Graph();
-}
-
-Robot::~Robot()
-{
-  delete graph;
-}
-
 // Инициализация всех датчиков с настройкой
 void Robot::init()
 {
   Serial.println("Init");
 
+  graph.add_by_angle(0);
+  graph.add_by_angle(90);
+  graph.add_by_angle(180);
+  graph.add_by_angle(90);
+  graph.add_by_angle(90, false);
+  graph.add_by_angle(90);
+  graph.add_by_angle(-90);
+  graph.add_by_angle(-90);
+  graph.add_by_angle(0);
+  graph.add_by_angle(-90);
+  graph.add_by_angle(-180);
+
+  is_return_to = true;
+  node point = graph.get_not_discovered();
+  path = graph.get_move(point, map_angle);
+
+  // graph.print_graph();
+  
   myserva.init_servo();
 
   init_encoder();
@@ -60,7 +68,8 @@ void Robot::state_machine()
   switch (current_state)
   {
   case state::WAIT:
-     alg_right_hand();
+    if (is_return_to) return_to_point();
+    else alg_right_hand();
 
     break;
   case state::MOVING:
@@ -86,13 +95,13 @@ void Robot::state_machine()
   case state::GIVING:
     motor_stop();
 
-    myserva.giving(side_giving, graph->get_current_node().letter_cell);
+    myserva.giving(side_giving, graph.get_current_node().letter_cell);
 
     current_state = old_state;
     is_giving = false;
     break;
   case state::STANDING:
-    graph->set_current_node(cell_type::WATER);
+    graph.set_current_node(cell_type::WATER);
 
     motors(100, 100);
     delay(1500);
@@ -102,8 +111,8 @@ void Robot::state_machine()
     is_stand = true;
     current_state = state::MOVING;
     break;
-  case state::RETURN:
-    graph->set_current_node(cell_type::HOLE);
+  case state::DETOUR:
+    graph.set_current_node(cell_type::HOLE);
 
     motors(-100, -100);
     delay(1500);
@@ -111,6 +120,20 @@ void Robot::state_machine()
     while (!rotate(180)) wait(1);
     
     current_state = state::WAIT;
+    break;
+  case state::SAVECELL:
+    if(graph.is_start_node()) 
+    {
+      digitalWrite(LED_B, HIGH);
+      motor_stop();
+      delay(10000);
+      digitalWrite(LED_B, LOW);
+      is_return_to = true;
+      node point = graph.get_not_discovered();
+      path = graph.get_move(point, map_angle);
+    }
+    else graph.set_current_node(cell_type::CHECKPOINT);
+    current_state = state::MOVING;
     break;
   }
 }
@@ -123,7 +146,7 @@ void Robot::wait(int time_wait)
   do
   {
     if(millis() - timers.timer_mpu_update > 100 || current_state == state::ROTATION_LEFT || 
-      current_state == state::ROTATION_RIGHT || current_state == state::RETURN)
+      current_state == state::ROTATION_RIGHT || current_state == state::DETOUR)
     {
       mpu.update();
       timers.timer_mpu_update = millis();
@@ -144,26 +167,26 @@ void Robot::wait(int time_wait)
 
     color color = color_sens.get_color();
     if(color == color::BLUE && !is_stand) current_state = state::STANDING; 
-    if(color == color::WHITE) is_stand = false;
-    if(color == color::BLACK) current_state = state::RETURN;
+    if(color == color::WHITE && is_stand) is_stand = false;
+    if(color == color::BLACK) current_state = state::DETOUR;
+    // if(color == color::SILVER) current_state = state::SAVECELL;
 
     side = 0;
     
     letter l = camera_l.get_letter();
     letter r = camera_r.get_letter();
     // print_save();
-    if ((current_state == WAIT || current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT) && 
-        color != color::SILVER)
+    if ((current_state == WAIT || current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT))
     {
       if (l != letter::N && left_dist < DISTANCE_CAMERA) side = 1;
       if (r != letter::N && right_dist < DISTANCE_CAMERA) side = 2;
     }
 
     if (!is_giving && side != 0 &&
-        graph->get_current_node().letter_cell == letter::N)
+        graph.get_current_node().letter_cell == letter::N)
     {
-      if(side == 1) graph->set_current_node(cell_type::USUAL, l);
-      else graph->set_current_node(cell_type::USUAL, r);
+      if(side == 1) graph.set_current_node(cell_type::USUAL, l);
+      else graph.set_current_node(cell_type::USUAL, r);
 
       side_giving = side;
 
@@ -200,7 +223,7 @@ void Robot::print_enc()
 // Вывод карты построенной роботом
 void Robot::print_map()
 {
-  graph->print_graph();
+  graph.print_graph();
 }
 
 // Вывод с какой стороны обнаружен спаснабор и кол-во, которое нужно выдать
@@ -249,8 +272,8 @@ void Robot::print_current_state()
     Serial.println("GIVING");
     break;
 
-  case state::RETURN:
-    Serial.println("RETURN");
+  case state::DETOUR:
+    Serial.println("DETOUR");
     break;
 
   case state::STANDING:
@@ -290,7 +313,7 @@ bool Robot::mov_forward()
   {
     countL = 0;
     countR = 0;
-    graph->add_by_angle(map_angle);
+    graph.add_by_angle(map_angle);
   }
 
   return is_stop_moving;
@@ -356,7 +379,7 @@ void Robot::alg_right_hand()
   {
     current_state = ROTATION_RIGHT;
 
-    if (left_dist > DISTANCE) graph->add_by_angle(map_angle, false);
+    if (left_dist > DISTANCE) graph.add_by_angle(map_angle, false);
 
     map_angle = adduction(map_angle - 90);
   }
@@ -364,7 +387,7 @@ void Robot::alg_right_hand()
   {
     current_state = MOVING;
 
-    if (left_dist > DISTANCE) graph->add_by_angle(map_angle, false);
+    if (left_dist > DISTANCE) graph.add_by_angle(map_angle, false);
   }
   else
   {
@@ -380,7 +403,7 @@ void Robot::alg_left_hand()
   {
     current_state = ROTATION_LEFT;
 
-    if (right_dist > DISTANCE) graph->add_by_angle(map_angle, false);
+    if (right_dist > DISTANCE) graph.add_by_angle(map_angle, false);
 
     map_angle = adduction(map_angle + 90);
   }
@@ -388,7 +411,7 @@ void Robot::alg_left_hand()
   {
     current_state = MOVING;
 
-    if (right_dist > DISTANCE) graph->add_by_angle(map_angle, false);
+    if (right_dist > DISTANCE) graph.add_by_angle(map_angle, false);
   }
   else
   {
@@ -400,11 +423,10 @@ void Robot::alg_left_hand()
 // Возврат к точке на карте где робот не был
 void Robot::return_to_point()
 {
-  // node point = graph->get_not_discovered();
-  // Vec<enum moves> moves = graph->get_move(point, 0);
-
-  // current_state = moves[0];
-  // moves.remove(0);
+  if(path.size() == 1) is_return_to = false;
+  current_state = path[0];
+  Serial.println(current_state);
+  path.remove(0);
 }
 
 void Robot::reset_robot()
@@ -425,13 +447,13 @@ void Robot::reset_robot()
   flags.reset();
   timers.reset();
 
-  delete graph;
-  graph = new Graph();
+  // graph.set_to_checkpoint();
 
   myserva.start_pos();
 
   digitalWrite(LED_B, HIGH);
   delay(1000);
+  
   while (digitalRead(BUTTON_PIN) == 1);
   digitalWrite(LED_B, LOW);
   delay(1000);
@@ -446,6 +468,8 @@ void Robot::reset_robot()
   right_dist = sensor_r.get_distance();
   left_dist = sensor_l.get_distance();
   central_dist = sensor_u.get_distance();
+
+  mpu.reset_yaw();
 
   color_sens.update();
 }

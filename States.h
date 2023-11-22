@@ -8,5 +8,6 @@ enum state
   ROTATION_LEFT,
   GIVING,
   STANDING,
-  RETURN
+  DETOUR,
+  SAVECELL
 };

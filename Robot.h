@@ -17,14 +17,11 @@
 #include "Utils.h"
 #include "Settings.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 class Robot
 {
 public:
-    Robot();
-    ~Robot();
-
     void init();
 
     void state_machine();
@@ -48,7 +45,7 @@ public:
 
     void reset_robot();
 private:
-    Graph* graph;
+    Graph graph;
 
     static Robot *instance_;
 
@@ -68,6 +65,7 @@ private:
 
     state current_state = state::WAIT;
     state old_state = state::WAIT;
+    Vec<state> path;
     int map_angle = 0;
     bool is_return_to = false;
     bool is_giving = false;

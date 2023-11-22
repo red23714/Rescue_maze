@@ -52,9 +52,9 @@
 #define GREEN_BLACK 222
 #define BLUE_BLACK 63
 //Значения RGB для серебристого
-#define RED_SILVER 20
-#define GREEN_SILVER 20
-#define BLUE_SILVER 7
+#define RED_SILVER 26 // 20
+#define GREEN_SILVER 26 //20
+#define BLUE_SILVER 9 //20
 //Погрешность при котором идеальные значения могут не совпадать с реальными параметрами цвета
 #define COLOR_SPREAD 40
 

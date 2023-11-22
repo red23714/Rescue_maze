@@ -9,6 +9,8 @@ Graph::Graph(){
 
     graph.push_back(start_node);
 
+    Serial.println("Hello");
+
     current_node = 0;
 }
 
@@ -148,45 +150,43 @@ int Graph::adduction(int angle)
 }
 
 //Создает набор движений, которые необходимо выполнить, чтобы добраться из текущий вершины в заданную
-Vec<enum moves> Graph::get_move(node to, int angle)
+Vec<state> Graph::get_move(node to, int angle)
 {
-    Vec<enum moves> moves;
+    Vec<state> moves;
     enum direction dir;
     Vec<node> path;
     int x = graph[current_node].x;
     int y = graph[current_node].y;
 
-    path = find_path(to);
+    path = find_path(to.number);
 
     for (int i = 0; i < path.size(); i++)
     {
-        // std::cout << x << ' ' << y << ' ' << angle << " ";
         dir = get_move_dir(x, y, path[i].x, path[i].y, angle);
-        // std::cout << dir << "\n";
 
         switch(dir)
         {
             case FORWARD:
-                moves.push_back(MOVE_FORWARD);
+                moves.push_back(state::MOVING);
                 break;
             case RIGHT:
                 angle = adduction(angle - 90);
-                moves.push_back(ROTATE_RIGHT);
-                moves.push_back(MOVE_FORWARD);
+                moves.push_back(state::ROTATION_RIGHT);
+                moves.push_back(state::MOVING);
                 break;
             case LEFT:
                 angle = adduction(angle + 90);
-                moves.push_back(ROTATE_LEFT);
-                moves.push_back(MOVE_FORWARD);
+                moves.push_back(state::ROTATION_LEFT);
+                moves.push_back(state::MOVING);
                 break;
             case BACKWARD:
                 angle = adduction(angle + 180);
-                moves.push_back(ROTATE_RIGHT);
-                moves.push_back(ROTATE_RIGHT);
-                moves.push_back(MOVE_FORWARD);
+                moves.push_back(state::ROTATION_RIGHT);
+                moves.push_back(state::ROTATION_RIGHT);
+                moves.push_back(state::MOVING);
                 break;
             default:
-                moves.push_back(NO_MOVE);
+                moves.push_back(state::WAIT);
                 break;
         }
 
@@ -205,70 +205,79 @@ bool Graph::is_discovered(int x, int y)
 }
 
 //Алгоритм Деикстры, который находит кратчайший путь до заданной вершины
-Vec<node> Graph::find_path(node to)
+Vec<node> Graph::find_path(int end)
 {
-    int st = graph[current_node].number;
-    int fn = to.number;
+    int start = current_node;
+    int n = graph.size();
+    int maximum = 1000;
 
-    Vec<node> exit;
+    // Массив для хранения расстояний от начальной точки
+    int *dist = new int[n];
 
-    if(fn != -1)
+    // Массив для отслеживания посещенных вершин
+    bool *visited = new bool[n];
+
+    // Инициализация расстояния от начальной точки до самой себя
+    for (int i = 0; i < n; ++i)
     {
-        Vec<Vec<int>> g;
+        dist[i] = maximum;
+        visited[i] = false;
+    }
+    dist[start] = 0;
 
-        for (int i = 0; i < graph.size(); i++)
+    // Цикл по всем вершинам графа
+    for (int count = 0; count < n - 1; ++count)
+    {
+        // Находим вершину с минимальным расстоянием, которую еще не посетили
+        int minDist = maximum, minIndex;
+        for (int v = 0; v < n; ++v)
         {
-            g.push_back(Vec<int>());
-            for(int j = 0; j < graph.size(); j++)
+            if (!visited[v] && dist[v] <= minDist)
             {
-                if(graph_connection[i][j])
-                {
-                    g[i].push_back(j);
-                }
+                minDist = dist[v];
+                minIndex = v;
             }
         }
 
-        Queue q;
-        q.push(st);
-        Vec<bool> used(graph.size());
-        Vec<int> p(graph.size());
-        used[st] = true;
-        p[st] = -1;
-        while (!q.empty()) 
+        // Помечаем выбранную вершину как посещенную
+        visited[minIndex] = true;
+
+        // Обновляем расстояния до соседних вершин через выбранную вершину
+        for (int v = 0; v < n; ++v)
         {
-            int v = q.front();
-            q.pop();
-            for (size_t i = 0; i < g[v].size(); ++i) 
+            if (!visited[v] && graph_connection[minIndex][v] && dist[minIndex] != maximum && dist[minIndex] + graph_connection[minIndex][v] < dist[v])
             {
-                int to = g[v][i];
-                if (!used[to]) 
-                {
-                    used[to] = true;
-                    q.push (to);
-                    p[to] = v;
-                }
+                dist[v] = dist[minIndex] + graph_connection[minIndex][v];
             }
-        }
-
-        Vec<int> path;
-        int past = fn;
-        for (int i = 0; i < graph.size(); i++)
-        {
-            if(past != -1) 
-            {
-                path.push_back(past);
-                past = p[past];
-            }
-        }
-
-        // std::reverse(path.begin(), path.end());
-
-        int n = path.size();
-        for (int i = 0; i < n; i++)
-        {
-            exit.push_back(graph[path[n - i - 1]]);
         }
     }
+
+    Vec<int> path;
+
+    // Выводим кратчайший путь от начальной точки к конечной
+    int current = end;
+    while (current != start)
+    {
+        for (int v = 0; v < n; ++v)
+        {
+            if (graph_connection[v][current] == 1 && dist[current] == dist[v] + 1)
+            {
+                path.push_back(v);
+                current = v;
+                break;
+            }
+        }
+    }
+
+    Vec<node> exit;
+    for (int i = path.size() - 2; i >= 0; i--)
+    {
+        exit.push_back(graph[path[i]]);
+    }
+    
+
+    delete[] dist;
+    delete[] visited;
 
     return exit;
 }
@@ -301,8 +310,7 @@ int Graph::print_graph()
 //Проверяет существует ли вершина
 bool Graph::get_node_exist(int x, int y)
 {
-    if(get_node(x, y) != -1) return true;
-    else return false;
+    return get_node(x, y) != -1;
 }
 
 //Возвращает вершину из графа по заданным координатам
@@ -335,11 +343,23 @@ int Graph::get_node(int x, int y)
     return -1;
 }
 
+void Graph::set_to_checkpoint()
+{
+    for(int i = graph.size() - 1; i >= 0; i--)
+    {
+        if(graph[i].type == cell_type::CHECKPOINT || i == 0) 
+        {
+            current_node = i;
+            break;
+        }
+    }
+}
+
 //Находит ближайшую вершину, которая не была пройдена
 node Graph::get_not_discovered()
 {
     int x = graph[current_node].x, y = graph[current_node].y;
-    int x_c = 500, y_c = 500, index = 0;
+    int x_c = 100, y_c = 100, index = 0;
     int x_vec_1, y_vec_1, x_vec_2, y_vec_2, len_1, len_2;
     for(int i = 0; i < graph.size(); i++)
     {
@@ -349,6 +369,7 @@ node Graph::get_not_discovered()
         y_vec_2 = abs(y - graph[i].y);
         len_1 = sqrt(x_vec_1*x_vec_1 + y_vec_1*y_vec_1);
         len_2 = sqrt(x_vec_2*x_vec_2 + y_vec_2*y_vec_2);
+
         if(graph[i].discovered == false && len_1 > len_2)
         {
             x_c = graph[i].x;
@@ -375,6 +396,11 @@ node Graph::get_current_node()
 int Graph::get_graph_length()
 {
     return graph.size();
+}
+
+bool Graph::is_start_node()
+{
+    return current_node == 0;
 }
 
 void Graph::set_current_node(cell_type type = cell_type::USUAL, letter letter_cell = letter::N)

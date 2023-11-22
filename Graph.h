@@ -5,7 +5,7 @@
 #include <math.h>
 #include "Node.h"
 #include "Direction.h"
-#include "Moves.h"
+#include "States.h"
 
 class Graph
 {
@@ -23,12 +23,16 @@ public:
     node get_current_node();
     int get_graph_length();
 
+    void set_to_checkpoint();
+
+    bool is_start_node();
+
     void set_current_node(cell_type = cell_type::USUAL, letter = letter::N);
 
     int print_graph();
 
-    Vec<enum moves> get_move(node to, int);
-    Vec<node> find_path(node);
+    Vec<state> get_move(node to, int);
+    Vec<node> find_path(int);
     // 0 - right
     // 1 - left
     // 2 - forward

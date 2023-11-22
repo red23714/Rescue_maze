@@ -51,6 +51,7 @@ public:
     {
         update();
         yaw_first = adduction(get_yaw() + yaw_first);
+        pitch_first = pitch;
     }
 
     void print_gyro()
