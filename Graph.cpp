@@ -9,8 +9,6 @@ Graph::Graph(){
 
     graph.push_back(start_node);
 
-    Serial.println("Hello");
-
     current_node = 0;
 }
 
@@ -263,6 +261,7 @@ Vec<node> Graph::find_path(int end)
             if (graph_connection[v][current] == 1 && dist[current] == dist[v] + 1)
             {
                 path.push_back(v);
+                Serial.println(v);
                 current = v;
                 break;
             }

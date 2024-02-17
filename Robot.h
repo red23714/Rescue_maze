@@ -17,7 +17,7 @@
 #include "Utils.h"
 #include "Settings.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 class Robot
 {

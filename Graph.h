@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Vec.h"
-#include "Queue.h"
 #include <math.h>
 #include "Node.h"
 #include "Direction.h"

@@ -8,22 +8,28 @@ void Robot::init()
   Serial.println("Init");
 
   graph.add_by_angle(0);
-  graph.add_by_angle(90);
-  graph.add_by_angle(180);
-  graph.add_by_angle(90);
-  graph.add_by_angle(90, false);
-  graph.add_by_angle(90);
   graph.add_by_angle(-90);
   graph.add_by_angle(-90);
   graph.add_by_angle(0);
+  graph.add_by_angle(0, false);
   graph.add_by_angle(-90);
-  graph.add_by_angle(-180);
-
+  // graph.add_by_angle(90);
+  // graph.add_by_angle(180);
+  // graph.add_by_angle(90);
+  // graph.add_by_angle(90);
+  // graph.add_by_angle(180);
+  
   is_return_to = true;
+  graph.get_current_node().print_node();
   node point = graph.get_not_discovered();
+  point.print_node();
+  map_angle = 180;
   path = graph.get_move(point, map_angle);
 
-  // graph.print_graph();
+  for (int i = 0; i < path.size(); i++)
+  {
+    Serial.println(path[i]);
+  }
   
   myserva.init_servo();
 
@@ -32,7 +38,7 @@ void Robot::init()
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(LED_B, OUTPUT);
 
-  digitalWrite(LED_B, HIGH);
+  analogWrite(LED_B, 255);
 
   sensor_r.init_dis();
   sensor_u.init_dis();
@@ -42,14 +48,14 @@ void Robot::init()
 
   if(digitalRead(BUTTON_PIN) == 0) 
   {
-    digitalWrite(LED_B, LOW);
+    analogWrite(LED_B, 0);
     delay(100);
-    digitalWrite(LED_B, HIGH);
+    analogWrite(LED_B, 255);
 
     mpu.init_gyro();
   }
 
-  digitalWrite(LED_B, LOW);
+  analogWrite(LED_B, 0);
 
   while (digitalRead(BUTTON_PIN) == 1);
 
@@ -81,15 +87,23 @@ void Robot::state_machine()
   case state::ROTATION_RIGHT:
     if (rot_right())
     {
-      if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
-      else current_state = state::WAIT;
+      if(is_return_to) current_state = state::WAIT;
+      else 
+      {
+        if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
+        else current_state = state::WAIT;
+      }
     }
     break;
   case state::ROTATION_LEFT:
     if (rot_left())
     {
-      if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
-      else current_state = state::WAIT;
+      if(is_return_to) current_state = state::WAIT;
+      else 
+      {
+        if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
+        else current_state = state::WAIT;
+      }
     }
     break;
   case state::GIVING:
@@ -124,10 +138,10 @@ void Robot::state_machine()
   case state::SAVECELL:
     if(graph.is_start_node()) 
     {
-      digitalWrite(LED_B, HIGH);
+      analogWrite(LED_B, 255);
       motor_stop();
       delay(10000);
-      digitalWrite(LED_B, LOW);
+      analogWrite(LED_B, 0);
       is_return_to = true;
       node point = graph.get_not_discovered();
       path = graph.get_move(point, map_angle);
@@ -425,8 +439,8 @@ void Robot::return_to_point()
 {
   if(path.size() == 1) is_return_to = false;
   current_state = path[0];
-  Serial.println(current_state);
   path.remove(0);
+  Serial.println(current_state);
 }
 
 void Robot::reset_robot()
@@ -451,11 +465,11 @@ void Robot::reset_robot()
 
   myserva.start_pos();
 
-  digitalWrite(LED_B, HIGH);
+  analogWrite(LED_B, 255);
   delay(1000);
   
   while (digitalRead(BUTTON_PIN) == 1);
-  digitalWrite(LED_B, LOW);
+  analogWrite(LED_B, 0);
   delay(1000);
 
   camera_r.update();
