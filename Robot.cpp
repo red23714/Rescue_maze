@@ -7,35 +7,37 @@ void Robot::init()
 {
   Serial.println("Init");
 
-  graph.add_by_angle(0);
-  graph.add_by_angle(-90);
-  graph.add_by_angle(-90);
-  graph.add_by_angle(0);
-  graph.add_by_angle(0, false);
-  graph.add_by_angle(-90);
-  // graph.add_by_angle(90);
-  // graph.add_by_angle(180);
-  // graph.add_by_angle(90);
-  // graph.add_by_angle(90);
-  // graph.add_by_angle(180);
+  // graph.add_by_angle(0);
+  // graph.add_by_angle(-90);
+  // graph.add_by_angle(-90);
+  // graph.add_by_angle(0);
+  // graph.add_by_angle(0, false);
+  // graph.add_by_angle(-90);
+  // // graph.add_by_angle(90);
+  // // graph.add_by_angle(180);
+  // // graph.add_by_angle(90);
+  // // graph.add_by_angle(90);
+  // // graph.add_by_angle(180);
   
-  is_return_to = true;
-  graph.get_current_node().print_node();
-  node point = graph.get_not_discovered();
-  point.print_node();
-  map_angle = 180;
-  path = graph.get_move(point, map_angle);
+  // is_return_to = true;
+  // graph.get_current_node().print_node();
+  // node point = graph.get_not_discovered();
+  // point.print_node();
+  // map_angle = 180;
+  // path = graph.get_move(point, map_angle);
 
-  for (int i = 0; i < path.size(); i++)
-  {
-    Serial.println(path[i]);
-  }
+  // for (int i = 0; i < path.size(); i++)
+  // {
+  //   Serial.println(path[i]);
+  // }
   
   myserva.init_servo();
 
   init_encoder();
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_RIGHT, INPUT_PULLUP);
+  pinMode(BUTTON_LEFT, INPUT_PULLUP);
   pinMode(LED_B, OUTPUT);
 
   analogWrite(LED_B, 255);
@@ -65,11 +67,11 @@ void Robot::init()
 // Машина состояний, где переключаются текущие действия робота
 void Robot::state_machine()
 {
-  // if ((current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT || current_state == state::WAIT) && is_giving)
-  // {
-  //   old_state = current_state;
-  //   current_state = state::GIVING;
-  // }
+  if ((current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT || current_state == state::WAIT) && is_giving)
+  {
+    old_state = current_state;
+    current_state = state::GIVING;
+  }
 
   switch (current_state)
   {
@@ -207,6 +209,9 @@ void Robot::wait(int time_wait)
       side = 0;
       is_giving = true;
     }
+
+    if(digitalRead(BUTTON_RIGHT) == 0 && central_dist > DISTANCE) brick(-1);
+    else if(digitalRead(BUTTON_LEFT) == 0 && central_dist > DISTANCE) brick(1);
 
   } while (millis() - timer_wait < time_wait);
 
@@ -434,6 +439,23 @@ void Robot::alg_left_hand()
   }
 }
 
+void Robot::brick(int dir)
+{
+  motor_stop();
+  delay(1000);
+  analogWrite(LED_B, 255);
+  motor_l(SPEED * dir);
+  motor_r(SPEED * dir * -1);
+  delay(1000);
+  motor_stop();
+  delay(1000);
+  motors(SPEED, SPEED);
+  delay(2000);
+  motor_stop();
+  delay(1000);
+  analogWrite(LED_B, 0);
+}
+
 // Возврат к точке на карте где робот не был
 void Robot::return_to_point()
 {
@@ -579,8 +601,8 @@ void Robot::motors(int value_l, int value_r)
 {
   if (DEBUG)
   {
-    // Serial.println(value_l);
-    // Serial.println(value_r);
+    Serial.println(value_l);
+    Serial.println(value_r);
   }
   else if (!DEBUG)
   {

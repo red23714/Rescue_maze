@@ -84,6 +84,8 @@ private:
     void alg_left_hand();
     void return_to_point();
 
+    void brick(int);
+
     void init_encoder();
     static void encL();
     static void encR();

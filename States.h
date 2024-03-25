@@ -9,5 +9,6 @@ enum state
   GIVING,
   STANDING,
   DETOUR,
-  SAVECELL
+  SAVECELL,
+  BRICK
 };

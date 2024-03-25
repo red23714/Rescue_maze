@@ -17,8 +17,10 @@
 
 //Порт кнопки
 #define BUTTON_PIN 34
+#define BUTTON_RIGHT 32
+#define BUTTON_LEFT 36
 
-#define LED_B A2
+#define LED_B A0
 
 //Порты XSHUT для датчиков расстояния
 #define XSHUT_pin_r 22
