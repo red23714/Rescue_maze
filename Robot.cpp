@@ -67,12 +67,11 @@ void Robot::init()
 // Машина состояний, где переключаются текущие действия робота
 void Robot::state_machine()
 {
-  if ((current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT || current_state == state::WAIT) && is_giving)
+  if (is_giving)
   {
     old_state = current_state;
     current_state = state::GIVING;
   }
-
   switch (current_state)
   {
   case state::WAIT:
@@ -191,12 +190,8 @@ void Robot::wait(int time_wait)
     
     letter l = camera_l.get_letter();
     letter r = camera_r.get_letter();
-    // print_save();
-    if ((current_state == WAIT || current_state == state::ROTATION_LEFT || current_state == state::ROTATION_RIGHT))
-    {
-      if (l != letter::N && left_dist < DISTANCE_CAMERA) side = 1;
-      if (r != letter::N && right_dist < DISTANCE_CAMERA) side = 2;
-    }
+    if (l != letter::N && left_dist < DISTANCE_CAMERA) side = 1;
+    if (r != letter::N && right_dist < DISTANCE_CAMERA) side = 2;
 
     if (!is_giving && side != 0 &&
         graph.get_current_node().letter_cell == letter::N)
@@ -442,17 +437,16 @@ void Robot::alg_left_hand()
 void Robot::brick(int dir)
 {
   motor_stop();
-  delay(1000);
   analogWrite(LED_B, 255);
   motor_l(SPEED * dir);
   motor_r(SPEED * dir * -1);
   delay(1000);
-  motor_stop();
-  delay(1000);
-  motors(SPEED, SPEED);
+  motors(SPEED - 70 * dir, SPEED + 70 * dir);
   delay(2000);
-  motor_stop();
+  motor_l(SPEED * dir);
+  motor_r(SPEED * dir * -1);
   delay(1000);
+  motor_stop();
   analogWrite(LED_B, 0);
 }
 
