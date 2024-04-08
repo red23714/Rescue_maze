@@ -1,3 +1,6 @@
+//Дебаг мод
+#define DEBUG 0
+
 //Порты моторов
 #define M1_1 7
 #define M1_2 9
@@ -8,7 +11,7 @@
 #define SERVO_PIN 11
 
 //Начальное положение кнопки
-#define START_POS_SERVO 92
+#define START_POS_SERVO 90
 
 //Адреса датчиков расстояния
 #define sensor_r_newAddress 42
@@ -46,19 +49,19 @@
 #define color_OUT 41
 
 //Значения RGB для синего
-#define RED_BLUE 150
-#define GREEN_BLUE 123
-#define BLUE_BLUE 33
+#define RED_BLUE 150 //147
+#define GREEN_BLUE 123 //126
+#define BLUE_BLUE 33 //37
 //Значения RGB для черного
-#define RED_BLACK 200
-#define GREEN_BLACK 222
-#define BLUE_BLACK 63
+#define RED_BLACK 200 //185
+#define GREEN_BLACK 222 //205
+#define BLUE_BLACK 63 //50
 //Значения RGB для серебристого
 #define RED_SILVER 26 // 20
 #define GREEN_SILVER 26 //20
 #define BLUE_SILVER 9 //20
 //Погрешность при котором идеальные значения могут не совпадать с реальными параметрами цвета
-#define COLOR_SPREAD 40
+#define COLOR_SPREAD 30
 
 //Средняя скорость робота
 #define SPEED 100

@@ -24,19 +24,19 @@ void Graph::add_by_angle(int map_angle, bool discovered = true)
     switch (map_angle) 
     {
       case 0:
-        x_local--;
+        x_local--; //влево
         break;
       case -90:
-        y_local++;
+        y_local++; //вперед
         break;
       case 90:
-        y_local--;
+        y_local--; //назад
         break;
       case 180:
-        x_local++;
+        x_local++; //вправо
         break;
       case -180:
-        x_local++;
+        x_local++; //вправо
         break;
     }
 
@@ -47,16 +47,16 @@ void Graph::add_by_angle(int map_angle, bool discovered = true)
     switch (map_angle) 
     {
       case 0:
-        y_local++;
+        y_local++; //вперед
         break;
       case -90:
-        x_local++;
+        x_local++; //вправо
         break;
       case 90:
-        x_local--;
+        x_local--; //влево
         break;
       case 180:
-        y_local--;
+        y_local--; //назад
         break;
       case -180:
         y_local--;
@@ -123,7 +123,7 @@ enum direction Graph::get_move_dir(int x1, int y1, int x2, int y2, int angle)
 
     int xr = xs * cos(angle * M_PI / 180) + ys * sin(angle * M_PI / 180);
     int yr = -xs * sin(angle * M_PI / 180) + ys * cos(angle * M_PI / 180);
-    
+
     if(xr == 0 && yr == 0) return NONE;
 
     if(yr == 0)
@@ -138,15 +138,6 @@ enum direction Graph::get_move_dir(int x1, int y1, int x2, int y2, int angle)
     }
 }
 
-//Ограничивает значения исходного угла в диапозоне -360; 360
-int Graph::adduction(int angle)
-{
-    while (angle > 180) angle -= 180;
-    while (angle < -180) angle += 180;
-
-    return angle;
-}
-
 //Создает набор движений, которые необходимо выполнить, чтобы добраться из текущий вершины в заданную
 Vec<state> Graph::get_move(node to, int angle)
 {
@@ -157,10 +148,15 @@ Vec<state> Graph::get_move(node to, int angle)
     int y = graph[current_node].y;
 
     path = find_path(to.number);
-
+    
     for (int i = 0; i < path.size(); i++)
     {
         dir = get_move_dir(x, y, path[i].x, path[i].y, angle);
+
+        Serial.print(dir);
+        Serial.print(" ");
+        Serial.println(angle);
+        path[i].print_node();
 
         switch(dir)
         {
@@ -191,6 +187,7 @@ Vec<state> Graph::get_move(node to, int angle)
         x = path[i].x;
         y = path[i].y;
     }
+    Serial.println("-----------------");
     return moves;
 }
 
@@ -243,7 +240,7 @@ Vec<node> Graph::find_path(int end)
         // Обновляем расстояния до соседних вершин через выбранную вершину
         for (int v = 0; v < n; ++v)
         {
-            if (!visited[v] && graph_connection[minIndex][v] && dist[minIndex] != maximum && dist[minIndex] + graph_connection[minIndex][v] < dist[v])
+            if (!visited[v] && graph_connection[minIndex][v] /*&& dist[minIndex] != maximum */&& dist[minIndex] + graph_connection[minIndex][v] < dist[v])
             {
                 dist[v] = dist[minIndex] + graph_connection[minIndex][v];
             }
@@ -254,26 +251,28 @@ Vec<node> Graph::find_path(int end)
 
     // Выводим кратчайший путь от начальной точки к конечной
     int current = end;
+    Serial.println(start);
+    path.push_back(current);
     while (current != start)
     {
         for (int v = 0; v < n; ++v)
         {
-            if (graph_connection[v][current] == 1 && dist[current] == dist[v] + 1)
+            if (graph_connection[v][current] == true && dist[current] == dist[v] + 1)
             {
                 path.push_back(v);
-                Serial.println(v);
                 current = v;
+                Serial.println(v);
                 break;
             }
         }
     }
 
     Vec<node> exit;
+    //path[0] += 1;
     for (int i = path.size() - 2; i >= 0; i--)
     {
         exit.push_back(graph[path[i]]);
     }
-    
 
     delete[] dist;
     delete[] visited;

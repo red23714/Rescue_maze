@@ -3,8 +3,8 @@
 enum direction
 {
     NONE = 0,
+    FORWARD,
     RIGHT,
     LEFT,
-    FORWARD,
     BACKWARD
 };

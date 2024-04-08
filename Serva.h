@@ -36,7 +36,7 @@ public:
                 delay(step);
             }
         }
-        delay(200);
+        delay(500);
     }
 
     // Выдача спаснабора
@@ -48,15 +48,15 @@ public:
         switch (count_save)
         {
         case letter::H:
-            l = 3;
-            break;
-
-        case letter::S:
             l = 2;
             break;
 
-        case letter::RED:
+        case letter::S:
             l = 1;
+            break;
+
+        case letter::RED:
+            l = 2;
             break;
 
         case letter::YELLOW:
@@ -73,15 +73,15 @@ public:
 
             if (side_in == 1)
             {
-                sweep(START_POS_SERVO, 160, 5);
+                sweep(START_POS_SERVO, 160, 15);
                 digitalWrite(LED_B, LOW);
-                sweep(160, START_POS_SERVO, 5);
+                sweep(160, START_POS_SERVO, 15);
             }
             else if (side_in == 2)
             {
-                sweep(START_POS_SERVO, 0, 5);
+                sweep(START_POS_SERVO, 20, 15);
                 digitalWrite(LED_B, LOW);
-                sweep(0, START_POS_SERVO, 5);
+                sweep(20, START_POS_SERVO, 15);
             }
         }
 

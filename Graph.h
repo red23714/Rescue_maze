@@ -5,6 +5,7 @@
 #include "Node.h"
 #include "Direction.h"
 #include "States.h"
+#include "utils.h"
 
 class Graph
 {
@@ -48,8 +49,6 @@ private:
     int get_node(int, int);
 
     void make_connection(int, int);
-
-    int adduction(int);
 
     enum direction get_move_dir(int, int, int, int, int);
 };

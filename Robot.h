@@ -17,8 +17,6 @@
 #include "Utils.h"
 #include "Settings.h"
 
-#define DEBUG 0
-
 class Robot
 {
 public:
@@ -42,6 +40,7 @@ public:
     void print_current_state();
 
     void motors(int, int);
+    void motor_stop();
 
     void reset_robot();
 private:
@@ -94,5 +93,4 @@ private:
 
     void motor_r(int);
     void motor_l(int);
-    void motor_stop();
 };

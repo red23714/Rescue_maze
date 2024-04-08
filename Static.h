@@ -5,13 +5,10 @@ struct Timers
     float timer_rotate = millis();
     float timer_i_rotate = millis();
 
-    float timer_mpu_update = millis();
-
     void reset()
     {
         timer_rotate = millis();
         timer_i_rotate = millis();
-        timer_mpu_update = millis();
     }
 };
 

@@ -33,14 +33,19 @@ public:
     {
         long long timer = millis();
 
-        while (s->read() != 255) {if(millis() - timer > 1000) return;}
-        while(s->available() < 2) {if(millis() - timer > 1000) return;}
-        
-        int n1 = s->read();
-        int n2 = s->read();
+        while(s->available() >= 4 && millis() - timer < 100)
+        {
+            if(s->read() == 255)
+            {
+                unsigned char a[2] = {s->read(), s->read()};
 
-        yaw = map(n1, 0, 254, -180, 180);
-        pitch = adduction(map(n2, 0, 254, 0, 360));
+                if(Crc8(a, 2) == s->read())
+                {
+                    yaw = map(a[0], 0, 254, -180, 180);
+                    pitch = adduction(map(a[1], 0, 254, 0, 360));
+                }
+            }
+        }
     }
 
     int inline get_yaw() { return adduction(yaw - yaw_first); }
@@ -70,4 +75,20 @@ private:
 
     bool is_yaw = false;
     HardwareSerial *s;
+
+    unsigned char Crc8(unsigned char *pcBlock, unsigned int len)
+    {
+        unsigned char crc = 0xFF;
+        unsigned int i;
+
+        while (len--)
+        {
+            crc ^= *pcBlock++;
+
+            for (i = 0; i < 8; i++)
+                crc = crc & 0x80 ? (crc << 1) ^ 0x31 : crc << 1;
+        }
+
+        return crc;
+    }
 };

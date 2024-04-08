@@ -19,7 +19,7 @@ void loop()
   // robot.print_current_state();
   // robot.print_map();
 
-  robot.wait(1);
+  // robot.wait(1);
 
-  robot.state_machine();
+  // robot.state_machine();
 }

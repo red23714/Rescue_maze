@@ -7,33 +7,28 @@ void Robot::init()
 {
   Serial.println("Init");
 
-  // graph.add_by_angle(0);
-  // graph.add_by_angle(-90);
-  // graph.add_by_angle(-90);
-  // graph.add_by_angle(0);
-  // graph.add_by_angle(0, false);
-  // graph.add_by_angle(-90);
-  // // graph.add_by_angle(90);
-  // // graph.add_by_angle(180);
-  // // graph.add_by_angle(90);
-  // // graph.add_by_angle(90);
-  // // graph.add_by_angle(180);
+  graph.add_by_angle(0);
+  graph.add_by_angle(90);
+  graph.add_by_angle(90);
+  graph.add_by_angle(-90, false);
+  graph.add_by_angle(90);
+  graph.add_by_angle(180);
   
-  // is_return_to = true;
-  // graph.get_current_node().print_node();
-  // node point = graph.get_not_discovered();
+  is_return_to = true;
+  graph.print_graph();
+  node point = graph.get_not_discovered();
   // point.print_node();
-  // map_angle = 180;
-  // path = graph.get_move(point, map_angle);
+  map_angle = 180;
+  path = graph.get_move(point, map_angle);
 
-  // for (int i = 0; i < path.size(); i++)
-  // {
-  //   Serial.println(path[i]);
-  // }
+  for (int i = 0; i < path.size(); i++)
+  {
+    Serial.println(path[i]);
+  }
   
-  myserva.init_servo();
+  // myserva.init_servo();
 
-  init_encoder();
+  // init_encoder();
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(BUTTON_RIGHT, INPUT_PULLUP);
@@ -42,11 +37,11 @@ void Robot::init()
 
   analogWrite(LED_B, 255);
 
-  sensor_r.init_dis();
-  sensor_u.init_dis();
-  sensor_l.init_dis();
+  // sensor_r.init_dis();
+  // sensor_u.init_dis();
+  // sensor_l.init_dis();
 
-  color_sens.init_color();
+  // color_sens.init_color();
 
   if(digitalRead(BUTTON_PIN) == 0) 
   {
@@ -91,7 +86,15 @@ void Robot::state_machine()
       if(is_return_to) current_state = state::WAIT;
       else 
       {
-        if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
+        if ((central_dist > DISTANCE || central_dist == -1)) 
+        {
+          current_state = state::MOVING;
+          if(is_giving)
+          {
+            old_state = current_state;
+            current_state = state::GIVING;
+          }
+        }
         else current_state = state::WAIT;
       }
     }
@@ -102,7 +105,15 @@ void Robot::state_machine()
       if(is_return_to) current_state = state::WAIT;
       else 
       {
-        if ((central_dist > DISTANCE || central_dist == -1)) current_state = state::MOVING;
+        if ((central_dist > DISTANCE || central_dist == -1)) 
+        {
+          current_state = state::MOVING;
+          if(is_giving)
+          {
+            old_state = current_state;
+            current_state = state::GIVING;
+          }
+        }
         else current_state = state::WAIT;
       }
     }
@@ -160,12 +171,7 @@ void Robot::wait(int time_wait)
 
   do
   {
-    if(millis() - timers.timer_mpu_update > 100 || current_state == state::ROTATION_LEFT || 
-      current_state == state::ROTATION_RIGHT || current_state == state::DETOUR)
-    {
-      mpu.update();
-      timers.timer_mpu_update = millis();
-    }
+    mpu.update();
 
     camera_r.update();
     camera_l.update();
@@ -181,9 +187,9 @@ void Robot::wait(int time_wait)
     left_dist = sensor_l.get_sensor_dis();
 
     color color = color_sens.get_color();
-    if(color == color::BLUE && !is_stand) current_state = state::STANDING; 
-    if(color == color::WHITE && is_stand) is_stand = false;
-    if(color == color::BLACK) current_state = state::DETOUR;
+    // if(color == color::BLUE && !is_stand) current_state = state::STANDING; 
+    // if(color == color::WHITE && is_stand) is_stand = false;
+    // if(color == color::BLACK) current_state = state::DETOUR;
     // if(color == color::SILVER) current_state = state::SAVECELL;
 
     side = 0;
@@ -194,7 +200,7 @@ void Robot::wait(int time_wait)
     if (r != letter::N && right_dist < DISTANCE_CAMERA) side = 2;
 
     if (!is_giving && side != 0 &&
-        graph.get_current_node().letter_cell == letter::N)
+        graph.get_current_node().letter_cell == letter::N && abs(mpu.get_pitch_first() - mpu.get_pitch()) < 10)
     {
       if(side == 1) graph.set_current_node(cell_type::USUAL, l);
       else graph.set_current_node(cell_type::USUAL, r);
@@ -202,7 +208,7 @@ void Robot::wait(int time_wait)
       side_giving = side;
 
       side = 0;
-      is_giving = true;
+      // is_giving = true;
     }
 
     if(digitalRead(BUTTON_RIGHT) == 0 && central_dist > DISTANCE) brick(-1);
@@ -315,10 +321,15 @@ bool Robot::mov_forward()
 
   u = err * K_WALL;
 
-  if (abs(mpu.get_pitch_first() - mpu.get_pitch()) < 10)
+  if(abs(mpu.get_pitch_first() - mpu.get_pitch()) < 10)
   {
     if (central_dist < DISTANCE_WALL_CENTER && central_dist != -1 && central_dist != 0) is_stop_moving = true;
     else if ((countL + countR) / 2 >= CELL_SIZE_ENCODER) is_stop_moving = true;
+  }
+  else
+  {
+    countL = 0;
+    countR = 0;
   }
 
   motors(SPEED + u, SPEED - u);

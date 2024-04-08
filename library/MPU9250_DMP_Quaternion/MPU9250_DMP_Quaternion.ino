@@ -76,7 +76,6 @@ void loop()
     // Use dmpUpdateFifo to update the ax, gx, mx, etc. values
     if (imu.dmpUpdateFifo() == INV_SUCCESS)
     {
-      Serial1.write(255);
       // computeEulerAngles can be used -- after updating the
       // quaternion values -- to estimate roll, pitch, and yaw
       imu.computeEulerAngles();
@@ -90,8 +89,6 @@ void loop()
       float pitch = degrees(2 * atan2(sinp, cosp) - PI / 2);
 
       mapRoll = map(imu.pitch, 0, 360, 0, 254);
-      Serial1.write(mapYaw);
-      Serial1.write(mapRoll);
       //SerialPort.print((mapYaw << 8) + mapPitch);
       //SerialPort.print(" ");
 
@@ -110,7 +107,12 @@ void loop()
   // SerialPort.print(" ");
   // SerialPort.println(crc8(mapYaw, mapRoll));
 
-  // delay(20);
+
+  Serial1.write(255);
+  Serial1.write(mapYaw);
+  Serial1.write(mapRoll);
+  Serial1.write(crc8(mapYaw, mapRoll));
+  delay(10);
 }
 
 byte crc8(int y, int p) {

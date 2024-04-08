@@ -61,6 +61,12 @@ public:
         // Получение частоты на выходе
         B = pulseIn(color_OUT, 0);
 
+        // Serial.print(R);
+        // Serial.print(" ");
+        // Serial.print(G);
+        // Serial.print(" ");
+        // Serial.println(B);
+
         if (in_range(R, RED_BLUE, COLOR_SPREAD) && in_range(G, GREEN_BLUE, COLOR_SPREAD) &&
             in_range(B, BLUE_BLUE, COLOR_SPREAD))
         {
@@ -73,11 +79,11 @@ public:
             return color::BLACK;
         }
 
-        if (in_range(R, RED_SILVER, COLOR_SPREAD) && in_range(G, GREEN_SILVER, COLOR_SPREAD) &&
-            in_range(B, BLUE_SILVER, COLOR_SPREAD))
-        {
-            return color::SILVER;
-        }
+        // if (in_range(R, RED_SILVER, COLOR_SPREAD) && in_range(G, GREEN_SILVER, COLOR_SPREAD) &&
+        //     in_range(B, BLUE_SILVER, COLOR_SPREAD))
+        // {
+        //     return color::SILVER;
+        // }
 
         return WHITE;
     }
